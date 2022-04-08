@@ -1,0 +1,24 @@
+* Atlantis Water Meter Board
+** How it works
+   - get the water pulses by the four inputs
+   - send the pulses to managing board (Rpi Hat) over RS485
+   - check the inputs pairs intergrity and show states in the pulses led
+   - check the RS-485 connection and show up state on link led
+
+** Hardware Start [0/4]
+   - [ ] 4 channels LED outputs
+   - [ ] 4 channels pulses inputs
+   - [ ] link LED output
+   - [ ] ADC inputs for channels
+
+** Firmware [0/3]
+   - [ ] ADC inputs thresholds
+   - [ ] noise filter on digital inputs
+   - [ ] usart to rs485 link comms
+
+
+* Testing on Client Date DD-MM-YYYY
+** some problem?
+   - what was the detected problem
+
+
