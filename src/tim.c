@@ -11,6 +11,8 @@
 #include "tim.h"
 #include "hard.h"
 #include "pwm.h"
+#include "stm32f0xx.h"
+
 
 
 // Module Private Types Constants and Macros -----------------------------------
@@ -305,7 +307,7 @@ void TIM17_IRQHandler (void)
         // else
         //     LED_ON;
 
-        PWM_Soft_Handler_Low_Freq ();
+        // PWM_Soft_Handler_Low_Freq ();
     }    
 }
 

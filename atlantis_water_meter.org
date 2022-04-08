@@ -5,11 +5,13 @@
    - check the inputs pairs intergrity and show states in the pulses led
    - check the RS-485 connection and show up state on link led
 
-** Hardware Start [0/4]
-   - [ ] 4 channels LED outputs
-   - [ ] 4 channels pulses inputs
-   - [ ] link LED output
-   - [ ] ADC inputs for channels
+** Hardware Start [4/5]
+   - [X] 4 channels LED outputs
+   - [X] 4 channels pulses inputs
+   - [X] link LED output
+   - [X] ADC inputs for channels
+   - [ ] Usart rs485 output
+
 
 ** Firmware [0/3]
    - [ ] ADC inputs thresholds
