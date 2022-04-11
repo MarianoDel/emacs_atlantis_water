@@ -20,7 +20,6 @@
 #include "test_functions.h"
 #include "temperatures.h"
 #include "dsp.h"
-#include "pwm.h"
 
 #include <stdio.h>
 #include <string.h>

@@ -101,6 +101,9 @@
 
 
 // Module Exported Functions ---------------------------------------------------
+void Led_Link_On (void);
+void Led_Link_Off (void);
+unsigned char Led_Link_Is_On (void);
 
 
 #endif    /* _HARD_H_ */

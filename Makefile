@@ -81,7 +81,8 @@ SRC += ./src/tim.c
 # SRC += ./src/uart.c
 # SRC += ./src/flash_program.c
 SRC += ./src/test_functions.c
-# SRC += ./src/pwm.c
+SRC += ./src/led_functions.c
+SRC += ./src/hard.c
 
 
 
@@ -210,15 +211,15 @@ tests:
 	./a.out
 
 
-tests_pwm:
+tests_led_funct:
 	# first compile common modules (modules to test and dependencies)
-	gcc -c --coverage src/pwm.c -I. $(INCDIR) -DSTM32F030
+	gcc -c --coverage src/led_functions.c -I. $(INCDIR) -DSTM32F030
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
-	gcc --coverage src/tests_pwm.c pwm.o tests_ok.o
+	gcc --coverage src/tests_led_funct.c led_functions.o tests_ok.o
 	./a.out
 	# process coverage
-	gcov pwm.c -m
+	gcov led_functions.c -m
 
 
 tests_pwm_simul:
