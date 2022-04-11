@@ -105,6 +105,22 @@ void Led_Link_On (void);
 void Led_Link_Off (void);
 unsigned char Led_Link_Is_On (void);
 
+void Led_Pulse1_On (void);
+void Led_Pulse1_Off (void);
+unsigned char Led_Pulse1_Is_On (void);
+
+void Led_Pulse2_On (void);
+void Led_Pulse2_Off (void);
+unsigned char Led_Pulse2_Is_On (void);
+
+void Led_Pulse3_On (void);
+void Led_Pulse3_Off (void);
+unsigned char Led_Pulse3_Is_On (void);
+
+void Led_Pulse4_On (void);
+void Led_Pulse4_Off (void);
+unsigned char Led_Pulse4_Is_On (void);
+
 
 #endif    /* _HARD_H_ */
 
