@@ -222,37 +222,14 @@ tests_led_funct:
 	gcov led_functions.c -m
 
 
-tests_pwm_simul:
+tests_comm:
 	# first compile common modules (modules to test and dependencies)
-	gcc -c src/dsp.c -I. $(INCDIR)
-	gcc -c src/pwm.c -I. $(INCDIR) -DSTM32F030
+	gcc -c src/comm.c -I. $(INCDIR) -DSTM32F030
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
-	gcc -c src/tests_vector_utils.c -I $(INCDIR)
-	gcc src/tests_pwm_simul.c dsp.o pwm.o tests_ok.o tests_vector_utils.o
+	gcc -c src/tests_mock_usart.c -I $(INCDIR)
+	gcc src/tests_comm.c comm.o tests_ok.o tests_mock_usart.o
 	./a.out
-
-
-tests_pwm_mapping:
-	# first compile common modules (modules to test and dependencies)
-	gcc -c src/pwm.c -I. $(INCDIR) -DSTM32F030
-	# second auxiliary helper modules
-	gcc -c src/tests_ok.c -I $(INCDIR)
-	gcc -c src/tests_vector_utils.c -I $(INCDIR)
-	gcc src/tests_pwm_mapping.c pwm.o tests_ok.o tests_vector_utils.o
-	./a.out
-
-tests_pwm_pre_post_simul:
-	# first compile common modules (modules to test and dependencies)
-	gcc -c src/dsp.c -I. $(INCDIR)
-	gcc -c src/pwm.c -I. $(INCDIR) -DSTM32F030
-	gcc -c src/filters_and_offsets.c -I. $(INCDIR) -DSTM32F030
-	# second auxiliary helper modules
-	gcc -c src/tests_ok.c -I $(INCDIR)
-	gcc -c src/tests_vector_utils.c -I $(INCDIR)
-	gcc src/tests_pwm_pre_post_simul.c filters_and_offsets.o dsp.o pwm.o tests_ok.o tests_vector_utils.o
-	./a.out
-
 
 
 # *** EOF ***
