@@ -12,10 +12,24 @@
 #include "stm32f0xx.h"
 
 
+// Module Private Types Constants and Macros -----------------------------------
+#define CHECK_PULSE_TIMER    1
+#define PULSES_COUNTER_ROOF    100
+#define PULSES_COUNTER_THRESHOLD    30
+
+
+
 // Externals -------------------------------------------------------------------
 
 
 // Globals ---------------------------------------------------------------------
+volatile unsigned char pulse_timeouts = 0;
+
+
+// Module Private Functions ----------------------------------------------------
+void PulseFilter (unsigned char * p_cntr, unsigned char input);
+void PulseEdgeDetect (unsigned short * p_edges, unsigned char * p_cntr, unsigned char * p_last_edge);
+
 
 
 // Module Functions ------------------------------------------------------------
@@ -106,6 +120,82 @@ void Led_Pulse4_Off (void)
 unsigned char Led_Pulse4_Is_On (void)
 {
     return LED_PULSE4;
+}
+
+
+unsigned char pulse_cntr[4] = { 0 };
+unsigned short pulse_edge_cntr[4] = { 0 };
+unsigned char pulse_last_edge[4] = { 0 };
+void HARD_UpdatePulsesFilters (void)
+{
+    if (pulse_timeouts)
+        return;
+    
+    pulse_timeouts = CHECK_PULSE_TIMER;
+
+    PulseFilter(&pulse_cntr[0], PULSE1_INPUT);
+    PulseFilter(&pulse_cntr[1], PULSE2_INPUT);
+    PulseFilter(&pulse_cntr[2], PULSE3_INPUT);
+    PulseFilter(&pulse_cntr[3], PULSE4_INPUT);
+
+    PulseEdgeDetect(&pulse_edge_cntr[0], &pulse_cntr[0], &pulse_last_edge[0]);
+    PulseEdgeDetect(&pulse_edge_cntr[1], &pulse_cntr[1], &pulse_last_edge[1]);
+    PulseEdgeDetect(&pulse_edge_cntr[2], &pulse_cntr[2], &pulse_last_edge[2]);
+    PulseEdgeDetect(&pulse_edge_cntr[3], &pulse_cntr[3], &pulse_last_edge[3]);    
+
+}
+
+
+unsigned short HARD_GetPulses (unsigned char channel)
+{
+    return pulse_edge_cntr[channel];
+}
+
+
+void HARD_SetPulses (unsigned char channel, unsigned short value)
+{
+    pulse_edge_cntr[channel] = value;
+}
+
+
+void PulseFilter (unsigned char * p_cntr, unsigned char input)
+{
+    if (input)
+    {
+        if (*p_cntr < PULSES_COUNTER_ROOF)
+            *p_cntr += 1;
+    }
+    else
+    {
+        if (*p_cntr)
+            *p_cntr -= 1;        
+    }    
+}
+
+
+void PulseEdgeDetect (unsigned short * p_edges, unsigned char * p_cntr, unsigned char * p_last_edge)
+{
+    unsigned char current_edge = 0;
+    
+    //check if we have rising edge on edge
+    if (*p_cntr > PULSES_COUNTER_THRESHOLD)
+        current_edge = 1;
+    else
+        current_edge = 0;
+    
+    if ((*p_last_edge == 0) && (current_edge == 1))    // have a new rising edge
+        *p_edges += 1;
+
+    if (*p_last_edge != current_edge)
+        *p_last_edge = current_edge;
+    
+}
+
+
+void HARD_Timeouts (void)
+{
+    if (pulse_timeouts)
+        pulse_timeouts--;
 }
 
 

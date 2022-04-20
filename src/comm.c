@@ -10,7 +10,8 @@
 
 // Includes --------------------------------------------------------------------
 #include "comm.h"
-#include "uart.h"
+#include "usart.h"
+#include "led_functions.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -23,17 +24,29 @@ typedef enum {
 
 } send_packet_state_e;
 
-#define TT_PACKET    20    //20ms for timeouts
 
+typedef enum {
+    MGR_INIT,
+    MGR_NO_LINK,
+    MGR_IN_LINK
+
+} manager_state_e;
+
+
+#define TT_PACKET    20    //20ms for timeouts
+#define TT_MGR_PACKET_NO_LINK    1000
+#define TT_MGR_PACKET_ERR_LINK    1050
+#define PACKETS_FOR_LINK_DOWN    5
 
 // Externals -------------------------------------------------------------------
 
 
 // Globals ---------------------------------------------------------------------
 volatile unsigned char send_packet_timeout = 0;
+volatile unsigned short manager_timer = 0;
 
 unsigned short seq = 0;
-unsigned short send_packet_expected_seq = 0;
+// unsigned short send_packet_expected_seq = 0;
 comm_resp_e send_packet_ack = resp_working;
 
 char send_buff [30] = { 0 };
@@ -66,188 +79,7 @@ void COMM_ProcessPayload (char * payload)
         valid_packet = 1;
         send_packet_ack = resp_sended_nok;
     }
-
-//     else if (!strncmp(payload, "REPORTAR_NUM:", sizeof ("REPORTAR_NUM:") - 1))
-//     {
-//         char * p_new_number = (payload + sizeof ("REPORTAR_NUM:") - 1);
-//         unsigned char report_ok = 0;
-
-//         unsigned char len = strlen(p_new_number);
-//         if (len < (20 + 2))
-//         {
-//             char new_number [20] = { 0 };
-//             strncpy(new_number, p_new_number, (len - 2));
-
-// #ifdef COMM_DEBUG_ON
-//             char debug [60] = {'\0'};
-//             sprintf(debug, "nuevo numero a reportar %s\n", new_number);
-//             Usart2Send(debug);
-// #endif
-//             if (VerifyNumberString(new_number) == 1)
-//             {
-//                 num_tel_rep_change_set;
-//                 strcpy(num_tel_rep, new_number);
-//                 report_ok = 1;
-//             }
-//         }
-        
-//         if (envios_ok)
-//         {
-//             enviar_sms = 1;
-//             strcpy(enviar_sms_num, orig_num);
-//             if (report_ok)
-//                 strcpy(enviar_sms_msg, "OK");
-//             else
-//                 strcpy(enviar_sms_msg, "NOK");
-            
-//         }
-//     }
-
-//     else if (!strncmp(payload, "REPORTAR_SITIO:", sizeof ("REPORTAR_SITIO:") -1))
-//     {
-//         char * p_new_place = (payload + sizeof ("REPORTAR_SITIO:") - 1);
-//         unsigned char report_ok = 0;
-
-//         unsigned char len = strlen(p_new_place);
-//         if (len < (SITE_MAX_LEN + 2))
-//         {
-//             char new_site [SITE_MAX_LEN + 1] = { 0 };
-//             strncpy(new_site, p_new_place, len - 2);    //quito el trailing OK
-
-// #ifdef COMM_DEBUG_ON
-//             char debug [SITE_MAX_LEN + 20] = {'\0'};
-//             sprintf(debug, "nuevo lugar %s\n", new_site);
-//             Usart2Send(debug);
-// #endif
-//             if (VerifySiteString(new_site) == 1)
-//             {
-//                 sitio_prop_change_set;
-//                 strcpy(sitio_prop, new_site);
-//                 report_ok = 1;
-//             }
-//         }
-        
-//         if (envios_ok)
-//         {
-//             enviar_sms = 1;
-//             strcpy(enviar_sms_num, orig_num);
-
-//             if (report_ok)
-//                 strcpy(enviar_sms_msg, "OK");
-//             else
-//                 strcpy(enviar_sms_msg, "NOK");
-//         }
-//     }
-
-//     else if (!strncmp(payload, "REPORTAR_BAT:", sizeof ("REPORTAR_BAT:") - 1))
-//     {
-//         char * p_new_conf = (payload + sizeof ("REPORTAR_BAT:") - 1);
-//         if (*p_new_conf == '0')
-//         {
-//             battery_check = 0;
-//             battery_check_change_set;
-//             CommsCheckSendOK (orig_num);
-//         }
-//         else if (*p_new_conf == '1')
-//         {
-//             battery_check = 1;
-//             battery_check_change_set;
-//             CommsCheckSendOK (orig_num);
-//         }
-//     }
-
-//     // Diagnostics and Activations    
-//     else if (!strncmp(payload, (const char *)"PRENDER:", sizeof ("PRENDER:") - 1))
-//     {
-//         diag_prender_set;
-//         CommsCheckSendOK (orig_num);        
-//     }
-
-//     else if (!strncmp(payload, "BATERIA:", sizeof ("BATERIA:") - 1))
-//     {
-//         // diag_battery_set;
-//         unsigned char volts_int = 0;
-//         unsigned char volts_dec = 0;
-//         Battery_Voltage(&volts_int, &volts_dec);
-
-//         enviar_sms = 1;
-//         strcpy(enviar_sms_num, orig_num);
-//         sprintf(enviar_sms_msg, "BAT: %02d.%02dV", volts_int, volts_dec);
-//     }
 }
-
-
-// //answer 1 -> ok; 0 -> some error
-// unsigned char VerifyNumberString (char * number)
-// {
-//     unsigned char len = 0;
-//     len = strlen(number);
-
-//     if ((len > 19) || (len < 3))
-//         return 0;
-
-//     for (unsigned char i = 0; i < len; i++)
-//     {
-//         if (*(number + i) != '+')
-//         {
-//             if ((*(number + i) > '9') ||
-//                 (*(number + i) < '0'))
-//                 return 0;
-//         }
-//     }
-
-//     return 1;
-// }
-
-
-// //answer 1 -> ok; 0 -> some error
-// unsigned char VerifySiteString (char * site)
-// {
-//     unsigned char len = 0;
-//     len = strlen(site);
-
-//     if ((len > SITE_MAX_LEN) || (len < 3))
-//         return 0;
-
-//     for (unsigned char i = 0; i < len; i++)
-//     {
-//         if ((*(site + i) == 'á') ||
-//             (*(site + i) == 'é') ||
-//             (*(site + i) == 'í') ||
-//             (*(site + i) == 'ó') ||
-//             (*(site + i) == 'ú'))
-//         {
-//             // do nothing here
-//         }
-//         else if ((unsigned char) *(site + i) == 193)
-//             *(site + i) = 'A';
-//         else if ((unsigned char) *(site + i) == 201)
-//             *(site + i) = 'E';
-//         else if ((unsigned char) *(site + i) == 205)
-//             *(site + i) = 'I';
-//         else if ((unsigned char) *(site + i) == 211)
-//             *(site + i) = 'O';
-//         else if ((unsigned char) *(site + i) == 218)
-//             *(site + i) = 'U';
-//         else if ((*(site + i) > '~') ||
-//                  (*(site + i) < ' '))
-//             return 0;
-//     }
-
-//     return 1;
-    
-// }
-
-
-// void CommsCheckSendOK (char * orig_num)
-// {
-//     if (envios_ok)
-//     {
-//         enviar_sms = 1;
-//         strcpy(enviar_sms_num, orig_num);
-//         strcpy(enviar_sms_msg, "OK");
-//     }
-// }
 
 
 void COMM_SendKeepAlive (void)
@@ -332,15 +164,15 @@ unsigned short COMM_WritePacket (char * p_buff, char * p_to_send)
 {
     unsigned char len = strlen(p_to_send);
 
-    if (len > 20)    // no more than 20 bytes of payload
+    if ((len == 0) || (len > 20))    // no more than 20 bytes of payload
         return 0;
 
-    if (seq < 1000)
+    if (seq < 999)    //numbers from 1 to 999
         seq++;
     else
         seq = 1;
 
-    if (*(p_to_send + len) == '\n')
+    if (*(p_to_send + len - 1) == '\n')
         sprintf(p_buff, "s%03d %s", seq, p_to_send);
     else
         sprintf(p_buff, "s%03d %s\n", seq, p_to_send);
@@ -349,10 +181,78 @@ unsigned short COMM_WritePacket (char * p_buff, char * p_to_send)
 }
 
 
+manager_state_e manager_state = MGR_INIT;
+unsigned char no_pckt_cnt = 0;
+void COMM_Manager_SM (void)
+{
+    switch (manager_state)
+    {
+    case MGR_INIT:
+        LF_Link_Reset();
+        manager_timer = 0;
+        manager_state++;
+        break;
+
+    case MGR_NO_LINK:
+        if (valid_packet)
+        {
+            valid_packet = 0;
+            manager_timer = TT_MGR_PACKET_NO_LINK;
+            LF_Link_Set();
+            no_pckt_cnt = 0;
+            manager_state++;
+        }
+
+        if (!manager_timer)
+        {
+            COMM_SendKeepAlive ();
+            LF_Link_Pulse();
+            manager_timer = TT_MGR_PACKET_ERR_LINK;            
+        }
+        break;
+
+    case MGR_IN_LINK:
+        if (valid_packet)
+        {
+            valid_packet = 0;
+            no_pckt_cnt = 0;
+            manager_timer = TT_MGR_PACKET_NO_LINK;
+        }
+
+        if (!manager_timer)
+        {
+            if (no_pckt_cnt < PACKETS_FOR_LINK_DOWN)
+            {
+                no_pckt_cnt++;
+                COMM_SendKeepAlive ();
+                LF_Link_Pulse();
+                manager_timer = TT_MGR_PACKET_ERR_LINK;
+            }
+            else
+                manager_state--;
+        }
+        break;
+
+    default:
+        manager_state = MGR_INIT;
+        break;
+    }
+}
+
+
+void COMM_Manager_Reset_SM (void)
+{
+    manager_state = MGR_INIT;
+}
+
+
 void COMM_Timeouts (void)
 {
     if (send_packet_timeout)
         send_packet_timeout--;
+
+    if (manager_timer)
+        manager_timer--;
     
 }
 //--- end of file ---//

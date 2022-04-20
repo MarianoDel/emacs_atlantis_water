@@ -65,45 +65,6 @@ void LF_Link_Reset (void)
 }
 
 
-void LF_Timeouts (void)
-{
-    // timeouts
-    if (led_link_timer)
-        led_link_timer--;
-
-    if (led_pulse_timer)
-        led_pulse_timer--;
-    
-    // other functions
-    if (led_link_active)
-    {
-        if (!led_link_timer)
-        {
-            LF_Link_Toggle();
-            led_link_active = 0;
-        }
-    }
-
-    if (led_pulse_active)
-    {
-        if (!led_pulse_timer)
-        {
-            if (led_pulse_cntr)
-            {
-                led_pulse_cntr--;
-                led_pulse_timer = LED_PULSE_TOGGLE_TIMEOUT;
-                LF_Leds_Pulse_Toggle();
-            }
-            else
-            {
-                led_pulse_active = 0;
-                LF_Leds_Pulse_Toggle_Down();
-            }
-        }
-    }
-}
-
-
 void LF_Link_Toggle (void)
 {
     if (Led_Link_Is_On())
@@ -182,6 +143,45 @@ void LF_Leds_Pulse_Toggle_Down (void)
     if (L4_TOGGLE_STATUS)
         Led_Pulse4_Off();
     
+}
+
+
+void LF_Timeouts (void)
+{
+    // timeouts
+    if (led_link_timer)
+        led_link_timer--;
+
+    if (led_pulse_timer)
+        led_pulse_timer--;
+    
+    // other functions
+    if (led_link_active)
+    {
+        if (!led_link_timer)
+        {
+            LF_Link_Toggle();
+            led_link_active = 0;
+        }
+    }
+
+    if (led_pulse_active)
+    {
+        if (!led_pulse_timer)
+        {
+            if (led_pulse_cntr)
+            {
+                led_pulse_cntr--;
+                led_pulse_timer = LED_PULSE_TOGGLE_TIMEOUT;
+                LF_Leds_Pulse_Toggle();
+            }
+            else
+            {
+                led_pulse_active = 0;
+                LF_Leds_Pulse_Toggle_Down();
+            }
+        }
+    }
 }
 
 //--- end of file ---//

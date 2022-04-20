@@ -78,7 +78,7 @@ SRC += ./src/gpio.c
 SRC += ./src/it.c
 SRC += ./src/tim.c
 # SRC += ./src/spi.c
-# SRC += ./src/uart.c
+SRC += ./src/usart.c
 # SRC += ./src/flash_program.c
 SRC += ./src/test_functions.c
 SRC += ./src/led_functions.c
@@ -224,12 +224,15 @@ tests_led_funct:
 
 tests_comm:
 	# first compile common modules (modules to test and dependencies)
-	gcc -c src/comm.c -I. $(INCDIR) -DSTM32F030
+	gcc -c src/led_functions.c -I. $(INCDIR) -DSTM32F030
+	gcc -c --coverage src/comm.c -I. $(INCDIR) -DSTM32F030
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
 	gcc -c src/tests_mock_usart.c -I $(INCDIR)
-	gcc src/tests_comm.c comm.o tests_ok.o tests_mock_usart.o
+	gcc --coverage src/tests_comm.c comm.o led_functions.o tests_ok.o tests_mock_usart.o
 	./a.out
+	# process coverage
+	gcov comm.c -m
 
 
 # *** EOF ***

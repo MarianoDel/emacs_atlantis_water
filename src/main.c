@@ -18,7 +18,6 @@
 #include "dma.h"
 
 #include "test_functions.h"
-#include "temperatures.h"
 #include "dsp.h"
 
 #include <stdio.h>
@@ -46,11 +45,10 @@ volatile unsigned short wait_ms_var = 0;
 // Globals ---------------------------------------------------------------------
 //-- Timers globals ----------------------------------
 volatile unsigned short timer_standby = 0;
-volatile unsigned short timer_check_temp = 0;
 
-//-- for the filters and outputs
-ma32_u16_data_obj_t pote_1_filter;
-ma32_u16_data_obj_t pote_2_filter;
+// //-- for the filters and outputs
+// ma32_u16_data_obj_t pote_1_filter;
+// ma32_u16_data_obj_t pote_2_filter;
 
 
 // Module Private Functions ----------------------------------------------------
@@ -213,9 +211,6 @@ void TimingDelay_Decrement(void)
     if (timer_standby)
         timer_standby--;
 
-    if (timer_check_temp)
-        timer_check_temp--;
-    
 }
 
 

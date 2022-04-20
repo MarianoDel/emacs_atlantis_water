@@ -30,6 +30,7 @@ void LF_Leds_Pulse_Toggle_Activate (void);
 void LF_Leds_Pulse_Toggle_Set (unsigned char ltoggle);
 void LF_Leds_Pulse_Toggle_Reset (unsigned char ltoggle);
 
+void LF_Timeouts (void);
     
 
 #endif    /* __LED_FUNCTIONS_H_ */

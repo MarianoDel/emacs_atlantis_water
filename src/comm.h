@@ -35,6 +35,10 @@ unsigned short COMM_WritePacket (char * p_buff, char * p_to_send);
 
 void COMM_ProcessPayload (char * msg);
 
+void COMM_Manager_SM (void);
+void COMM_Manager_Reset_SM (void);
+void COMM_Timeouts (void);
+
 // void CommsProcessSMSPayload (char * orig_num, char * payload);
 // unsigned char VerifyNumberString (char * number);
 // unsigned char VerifySiteString (char * site);

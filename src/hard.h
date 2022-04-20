@@ -51,15 +51,16 @@
 
 //GPIOA pin8    NC
 
-//GPIOA pin9    
-#define SW_RX_TX    ((GPIOA->ODR & 0x0200) != 0)
-#define SW_RX_TX_ON    (GPIOA->BSRR = 0x00000200)
-#define SW_RX_TX_OFF    (GPIOA->BSRR = 0x02000000)
+//GPIOA pin9    Usart1 Tx
+//GPIOA pin10    Usart1 Rx
+
+//GPIOA pin11
+#define SW_RX_TX    ((GPIOA->ODR & 0x0800) != 0)
+#define SW_RX_TX_ON    (GPIOA->BSRR = 0x00000800)
+#define SW_RX_TX_OFF    (GPIOA->BSRR = 0x08000000)
 #define SW_RX_TX_DE    SW_RX_TX_ON
 #define SW_RX_TX_RE_NEG    SW_RX_TX_OFF
 
-//GPIOA pin10
-//GPIOA pin11    Usart1
 
 //GPIOA pin12
 //GPIOA pin13
@@ -120,6 +121,11 @@ unsigned char Led_Pulse3_Is_On (void);
 void Led_Pulse4_On (void);
 void Led_Pulse4_Off (void);
 unsigned char Led_Pulse4_Is_On (void);
+
+void HARD_UpdatePulsesFilters (void);
+unsigned short HARD_GetPulses (unsigned char channel);
+void HARD_SetPulses (unsigned char channel, unsigned short value);
+void HARD_Timeouts (void);
 
 
 #endif    /* _HARD_H_ */
