@@ -146,6 +146,20 @@ void HARD_UpdatePulsesFilters (void)
 }
 
 
+unsigned char HARD_GetPulsesValue (unsigned char channel)
+{
+    unsigned char current_value = 0;
+    
+    //check the pulse value
+    if (pulse_cntr[channel] > PULSES_COUNTER_THRESHOLD)
+        current_value = 1;
+    else
+        current_value = 0;
+
+    return current_value;
+}
+
+
 unsigned short HARD_GetPulses (unsigned char channel)
 {
     return pulse_edge_cntr[channel];
@@ -175,19 +189,19 @@ void PulseFilter (unsigned char * p_cntr, unsigned char input)
 
 void PulseEdgeDetect (unsigned short * p_edges, unsigned char * p_cntr, unsigned char * p_last_edge)
 {
-    unsigned char current_edge = 0;
+    unsigned char current_value = 0;
     
     //check if we have rising edge on edge
     if (*p_cntr > PULSES_COUNTER_THRESHOLD)
-        current_edge = 1;
+        current_value = 1;
     else
-        current_edge = 0;
+        current_value = 0;
     
-    if ((*p_last_edge == 0) && (current_edge == 1))    // have a new rising edge
+    if ((*p_last_edge == 0) && (current_value == 1))    // have a new rising edge
         *p_edges += 1;
 
-    if (*p_last_edge != current_edge)
-        *p_last_edge = current_edge;
+    if (*p_last_edge != current_value)
+        *p_last_edge = current_value;
     
 }
 

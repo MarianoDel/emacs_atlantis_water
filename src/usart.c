@@ -89,6 +89,7 @@ void Usart1SendUnsigned(unsigned char * send, unsigned char size)
 {
     if ((ptx1_pckt_index + size) < &tx1buff[SIZEOF_TXDATA])
     {
+        SW_RX_TX_DE;
         memcpy((unsigned char *)ptx1_pckt_index, send, size);
         ptx1_pckt_index += size;
         USART1->CR1 |= USART_CR1_TXEIE;
@@ -166,8 +167,16 @@ void USART1_IRQHandler(void)
                 ptx1 = tx1buff;
                 ptx1_pckt_index = tx1buff;
                 USART1->CR1 &= ~USART_CR1_TXEIE;
+                USART1->CR1 |= USART_CR1_TCIE;    //enable transmision complete int
             }
         }
+    }
+
+    if ((USART1->CR1 & USART_CR1_TCIE) &&
+        (USART1->ISR & USART_ISR_TC))
+    {
+        USART1->CR1 &= ~USART_CR1_TCIE;
+        SW_RX_TX_RE_NEG;
     }
 
     if ((USART1->ISR & USART_ISR_ORE) || (USART1->ISR & USART_ISR_NE) || (USART1->ISR & USART_ISR_FE))

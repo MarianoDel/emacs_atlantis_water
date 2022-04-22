@@ -123,6 +123,7 @@ void Led_Pulse4_Off (void);
 unsigned char Led_Pulse4_Is_On (void);
 
 void HARD_UpdatePulsesFilters (void);
+unsigned char HARD_GetPulsesValue (unsigned char channel);
 unsigned short HARD_GetPulses (unsigned char channel);
 void HARD_SetPulses (unsigned char channel, unsigned short value);
 void HARD_Timeouts (void);

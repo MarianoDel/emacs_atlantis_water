@@ -37,6 +37,7 @@ void COMM_ProcessPayload (char * msg);
 
 void COMM_Manager_SM (void);
 void COMM_Manager_Reset_SM (void);
+unsigned char COMM_Manager_In_Link (void);
 void COMM_Timeouts (void);
 
 // void CommsProcessSMSPayload (char * orig_num, char * payload);

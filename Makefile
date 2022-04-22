@@ -83,6 +83,7 @@ SRC += ./src/usart.c
 SRC += ./src/test_functions.c
 SRC += ./src/led_functions.c
 SRC += ./src/hard.c
+SRC += ./src/comm.c
 
 
 

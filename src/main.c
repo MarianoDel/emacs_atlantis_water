@@ -16,8 +16,11 @@
 #include "tim.h"
 #include "adc.h"
 #include "dma.h"
+#include "usart.h"
 
 #include "test_functions.h"
+#include "comm.h"
+#include "led_functions.h"
 #include "dsp.h"
 
 #include <stdio.h>
@@ -26,9 +29,18 @@
 
 // Module Types Constants and Macros -------------------------------------------
 typedef enum {
-    MAIN_HARD_INIT,
-    MAIN_RUNNING,
-    MAIN_IN_OVERTEMP
+    MAIN_CHECK_P1,
+    MAIN_SEND_P1,
+    MAIN_WAIT_ACK_P1,
+    MAIN_CHECK_P2,
+    MAIN_SEND_P2,
+    MAIN_WAIT_ACK_P2,
+    MAIN_CHECK_P3,
+    MAIN_SEND_P3,
+    MAIN_WAIT_ACK_P3,
+    MAIN_CHECK_P4,
+    MAIN_SEND_P4,
+    MAIN_WAIT_ACK_P4
     
 } main_state_e;
 
@@ -67,7 +79,7 @@ int main(void)
         SysTickError();
 
     // Begin Hardware Tests - check test_functions module
-    TF_Hardware_Tests ();
+    // TF_Hardware_Tests ();
     
 
     // Hardware Inits. ---------------------------
@@ -77,6 +89,9 @@ int main(void)
     // DMA1_Channel1->CCR |= DMA_CCR_EN;
     // ADC1->CR |= ADC_CR_ADSTART;
 
+    // Init Usart1
+    Usart1Config ();
+    
     // // Start of Complete Pote Channel 1
     // TIM_14_Init ();
     // TIM_1_Init_pwm_neg_CH1_trig_CH2 ();
@@ -91,108 +106,224 @@ int main(void)
     // PWM_Soft_Set_Channels (1, 0);
     // PWM_Soft_Set_Channels (2, 0);
     
-    unsigned short ch1_input_filtered = 0;
-    unsigned short ch2_input_filtered = 0;
+    // unsigned short ch1_input_filtered = 0;
+    // unsigned short ch2_input_filtered = 0;
 
-    unsigned short bright = 0;
-    unsigned short temp0 = 0;
-    unsigned short temp1 = 0;
+    char send_buff [30] = { 0 };
+    unsigned short pulses = 0;
 
-    unsigned int calc = 0;
-    
-    main_state_e main_state = MAIN_HARD_INIT;
+    main_state_e main_state = MAIN_CHECK_P1;
+    comm_resp_e resp_comm = resp_working;
+
+    COMM_Manager_Reset_SM ();
 
     while (1)
     {
-    //     switch (main_state)
-    //     {
-    //     case MAIN_HARD_INIT:
+        switch (main_state)
+        {
+        case MAIN_CHECK_P1:
+            pulses = HARD_GetPulses(0);
+            if (pulses)
+                main_state++;
+            else
+                main_state = MAIN_CHECK_P2;
             
-    //         MA32_U16Circular_Reset (&pote_1_filter);
-    //         MA32_U16Circular_Reset (&pote_2_filter);    
+            break;
 
-    //         TIM17Enable();
-            
-    //         main_state++;
-    //         break;
+        case MAIN_SEND_P1:
+            if ((COMM_Manager_In_Link()) &&
+                (COMM_ReadyToSend()))
+            {
+                if (pulses > 999)
+                    pulses = 999;
 
-    //     case MAIN_RUNNING:
-            
-    //         if (!timer_standby)
-    //         {
-    //             ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
-    //             ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
-
-    //             // colors mixer
-    //             bright = ch1_input_filtered;
-    //             temp0 = 4095 - ch2_input_filtered;
-    //             temp1 = 4095 - temp0;
-        
-    //             calc = temp0 * bright;
-    //             calc >>= 12;    // to 4095
-    //             ch1_input_filtered = (unsigned short) calc;
-        
-    //             calc = temp1 * bright;
-    //             calc >>= 12;    // to 4095
-    //             ch2_input_filtered = (unsigned short) calc;
-    //             // end of colors mixer
-        
-
-    //             if (ch1_input_filtered > START_OF_CONTINUOS_DIMMER)
-    //             {
-    //                 PWM_Soft_Set_Channels (1, 256);
-    //                 Update_TIM14_CH1 (ch1_input_filtered - START_OF_PWM_DIMMER);
-    //             }
-    //             else if (ch1_input_filtered > (START_OF_PWM_DIMMER - 1))
-    //             {
-    //                 ch1_input_filtered -= START_OF_PWM_DIMMER;
-    //                 PWM_Soft_Set_Channels (1, ch1_input_filtered);
-    //                 Update_TIM14_CH1 (ANALOG_FOR_PWM_DIMMER);
-    //             }
-    //             else
-    //             {
-    //                 PWM_Soft_Set_Channels (1, 0);
-    //                 Update_TIM14_CH1 (ANALOG_FOR_PWM_DIMMER);
-    //             }
-
-        
-    //             if (ch2_input_filtered > START_OF_CONTINUOS_DIMMER)
-    //             {
-    //                 PWM_Soft_Set_Channels (2, 256);
-    //                 Update_TIM16_CH1N (ch2_input_filtered - START_OF_PWM_DIMMER);
-    //             }
-    //             else if (ch2_input_filtered > (START_OF_PWM_DIMMER - 1))
-    //             {
-    //                 ch2_input_filtered -= START_OF_PWM_DIMMER;
-    //                 PWM_Soft_Set_Channels (2, ch2_input_filtered);
-    //                 Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
-    //             }
-    //             else
-    //             {
-    //                 PWM_Soft_Set_Channels (2, 0);
-    //                 Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
-    //             }
-
-    //             timer_standby = 5;
-    //         }            
-    //         break;
-
-    //     case MAIN_IN_OVERTEMP:
-
-    //         if (!timer_check_temp)
-    //         {
-    //             if (Temp_Channel < TEMP_RECONNECT)
-    //                 main_state = MAIN_HARD_INIT;
+                sprintf(send_buff, "pulses %03d ch1", pulses);
+                if (COMM_SendPacket (send_buff) == resp_working)
+                    main_state++;
+                else
+                    main_state = MAIN_CHECK_P2;
                 
-    //             timer_check_temp = 2000;    //check again in two seconds            
-    //         }
-    //         break;
+            }
+            break;
 
-    //     default:
-    //         main_state = MAIN_HARD_INIT;
-    //         break;
-    //     }
+        case MAIN_WAIT_ACK_P1:
+            resp_comm = COMM_SendPacket (send_buff);
 
+            if (resp_comm != resp_working)
+            {
+                if (resp_comm == resp_sended_ok)
+                {
+                    unsigned short remain_pulses = HARD_GetPulses(0);
+                    HARD_SetPulses(0, remain_pulses - pulses);
+                    pulses = 0;
+                }
+
+                main_state = MAIN_CHECK_P2;
+            }
+            break;
+            
+        case MAIN_CHECK_P2:
+            pulses = HARD_GetPulses(1);
+            if (pulses)
+                main_state++;
+            else
+                main_state = MAIN_CHECK_P3;
+
+            break;
+
+        case MAIN_SEND_P2:
+            if ((COMM_Manager_In_Link()) &&
+                (COMM_ReadyToSend()))
+            {
+                if (pulses > 999)
+                    pulses = 999;
+
+                sprintf(send_buff, "pulses %03d ch2", pulses);
+                if (COMM_SendPacket (send_buff) == resp_working)
+                    main_state++;
+                else
+                    main_state = MAIN_CHECK_P3;
+
+            }
+            break;
+
+        case MAIN_WAIT_ACK_P2:
+            resp_comm = COMM_SendPacket (send_buff);
+
+            if (resp_comm != resp_working)
+            {
+                if (resp_comm == resp_sended_ok)
+                {
+                    unsigned short remain_pulses = HARD_GetPulses(1);
+                    HARD_SetPulses(1, remain_pulses - pulses);
+                    pulses = 0;                    
+                }
+
+                main_state = MAIN_CHECK_P3;
+            }
+            break;
+
+        case MAIN_CHECK_P3:
+            pulses = HARD_GetPulses(2);
+            if (pulses)
+                main_state++;
+            else
+                main_state = MAIN_CHECK_P4;
+            
+            break;
+
+        case MAIN_SEND_P3:
+            if ((COMM_Manager_In_Link()) &&
+                (COMM_ReadyToSend()))
+            {
+                if (pulses > 999)
+                    pulses = 999;
+
+                sprintf(send_buff, "pulses %03d ch3", pulses);
+                if (COMM_SendPacket (send_buff) == resp_working)
+                    main_state++;
+                else
+                    main_state = MAIN_CHECK_P4;
+
+            }
+            break;
+
+        case MAIN_WAIT_ACK_P3:
+            resp_comm = COMM_SendPacket (send_buff);
+
+            if (resp_comm != resp_working)
+            {
+                if (resp_comm == resp_sended_ok)
+                {
+                    unsigned short remain_pulses = HARD_GetPulses(2);
+                    HARD_SetPulses(2, remain_pulses - pulses);
+                    pulses = 0;                    
+                }
+
+                main_state = MAIN_CHECK_P4;
+            }
+            break;
+
+        case MAIN_CHECK_P4:
+            pulses = HARD_GetPulses(3);
+            if (pulses)
+                main_state++;
+            else
+                main_state = MAIN_CHECK_P1;
+            
+            break;
+            
+        case MAIN_SEND_P4:
+            if ((COMM_Manager_In_Link()) &&
+                (COMM_ReadyToSend()))
+            {
+                if (pulses > 999)
+                    pulses = 999;
+
+                sprintf(send_buff, "pulses %03d ch4", pulses);
+                if (COMM_SendPacket (send_buff) == resp_working)
+                    main_state++;
+                else
+                    main_state = MAIN_CHECK_P1;
+
+            }
+            break;
+
+        case MAIN_WAIT_ACK_P4:
+            resp_comm = COMM_SendPacket (send_buff);
+
+            if (resp_comm != resp_working)
+            {
+                if (resp_comm == resp_sended_ok)
+                {
+                    unsigned short remain_pulses = HARD_GetPulses(3);
+                    HARD_SetPulses(3, remain_pulses - pulses);
+                    pulses = 0;                    
+                }
+
+                main_state = MAIN_CHECK_P1;
+            }
+            break;
+
+        default:
+            main_state = MAIN_CHECK_P1;
+            break;
+        }
+
+        // concurrent things
+        if (!timer_standby)
+        {
+            timer_standby = 1;
+            HARD_Timeouts();
+            COMM_Timeouts();
+            LF_Timeouts();
+        }
+
+        HARD_UpdatePulsesFilters();
+        COMM_Manager_SM();
+
+
+        // pulse indication led its on absolute value
+        if (HARD_GetPulsesValue(0))
+            Led_Pulse1_On();
+        else
+            Led_Pulse1_Off();
+
+        if (HARD_GetPulsesValue(1))
+            Led_Pulse2_On();
+        else
+            Led_Pulse2_Off();
+
+        if (HARD_GetPulsesValue(2))
+            Led_Pulse3_On();
+        else
+            Led_Pulse3_Off();
+
+        if (HARD_GetPulsesValue(3))
+            Led_Pulse4_On();
+        else
+            Led_Pulse4_Off();
+        
         
 
     }    //end of while 1

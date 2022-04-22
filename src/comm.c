@@ -115,7 +115,7 @@ comm_resp_e COMM_SendPacket (char * p_to_send)
             Usart1Send(send_buff);
             send_packet_timeout = TT_PACKET;
             send_packet_ack = resp_working;
-            send_packet_expected_seq = new_seq;
+            // send_packet_expected_seq = new_seq;
             send_packet_state++;
         }
         else
@@ -243,6 +243,15 @@ void COMM_Manager_SM (void)
 void COMM_Manager_Reset_SM (void)
 {
     manager_state = MGR_INIT;
+}
+
+
+unsigned char COMM_Manager_In_Link (void)
+{
+    if (manager_state == MGR_IN_LINK)
+        return 1;
+
+    return 0;
 }
 
 
