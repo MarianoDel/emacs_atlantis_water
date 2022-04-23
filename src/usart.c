@@ -153,22 +153,20 @@ void USART1_IRQHandler(void)
     }
 
     // USART in Tx mode -------------------------------------------------
-    if (USART1->CR1 & USART_CR1_TXEIE)
+    if ((USART1->CR1 & USART_CR1_TXEIE) &&
+        (USART1->ISR & USART_ISR_TXE))
     {
-        if (USART1->ISR & USART_ISR_TXE)
+        if ((ptx1 < &tx1buff[SIZEOF_TXDATA]) && (ptx1 < ptx1_pckt_index))
         {
-            if ((ptx1 < &tx1buff[SIZEOF_TXDATA]) && (ptx1 < ptx1_pckt_index))
-            {
-                USART1->TDR = *ptx1;
-                ptx1++;
-            }
-            else
-            {
-                ptx1 = tx1buff;
-                ptx1_pckt_index = tx1buff;
-                USART1->CR1 &= ~USART_CR1_TXEIE;
-                USART1->CR1 |= USART_CR1_TCIE;    //enable transmision complete int
-            }
+            USART1->TDR = *ptx1;
+            ptx1++;
+        }
+        else
+        {
+            ptx1 = tx1buff;
+            ptx1_pckt_index = tx1buff;
+            USART1->CR1 &= ~USART_CR1_TXEIE;
+            USART1->CR1 |= USART_CR1_TCIE;    //enable transmision complete int
         }
     }
 

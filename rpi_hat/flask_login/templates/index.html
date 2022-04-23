@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Prueba</title>
+    <link rel="stylesheet" type="text/css"  href="{{ url_for('static',filename='style.css')}}" >  
+  </head>
+  <body>
+    <!-- page content -->
+    <h1>PRUEBA CONTROL AUDIO</h1>
+    <h2>Proyecto VHF por IP</h2>
+
+    <audio controls>
+      <source src="{{ url_for('audio') }}" type="audio/x-wav;codec=pcm">
+        Your browser doesnt support it
+    </audio>
+    <p>Elija la acción a seguir:</p>
+    <a href='/carrito'>
+      <button class="button button1">Ver Elementos en el Carrito</button>
+    </a>
+    <a href='/garbage'>
+      <button class="button button2">Ver Todo lo Consumido</button>
+    </a>
+    <a href='/clean_garbage'>
+      <button class="button button3">Limpiar Consumos</button>
+    </a>
+
+    <div class="container" style="min-height:100% width:80%">
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-warning alert-dismissible" role="alert">
+	<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+	{{message}}
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+	
+      {% block body %}{% endblock %}
+    </div>
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+
+    
+  </body>
+</html>
