@@ -33,3 +33,12 @@
 *** para que vea el js, le agrego static
     <script src="static/js/codigo.js"></script>
     <script src="static/js/visualizer.js"></script>
+
+* In base RPi system + openocd utils
+** Install emacs editor
+   - sudo apt-get install emacs
+
+** Must install PySerial
+   - sudo apt-get install python3-pip
+   - sudo pip3 install pyserial
+

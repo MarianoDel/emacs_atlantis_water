@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-#usar python3
-import RPi.GPIO as GPIO
+# use with python3
 import threading
 import time
 
@@ -12,33 +11,32 @@ LED_SERVER = 27
 LED_LINK = 22
 
 def GpiosInit():
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(SW_RX_TX, GPIO.OUT)
-    GPIO.setup(LED_SERVER, GPIO.OUT)
-    GPIO.setup(LED_LINK, GPIO.OUT)
+    print ("starting mocked gpios: {}, {}, {}".format(SW_RX_TX, LED_SERVER, LED_LINK))
 
 
 def GpiosCleanUp():
-    GPIO.cleanup()
+    print ("gpios cleanup")
 
     
 ##############
 # LED Server #
 ##############
+led_server_status = 0
 def LedServerOn():
-    GPIO.output(LED_SERVER, GPIO.HIGH)
+    led_server_status = 1
+    print ("LED_SERVER: High")
 
 
 def LedServerOff():
-    GPIO.output(LED_SERVER, GPIO.LOW)
+    led_server_status = 0
+    print ("LED_SERVER: Low")
 
 
 def LedServerToggle():
-    if GPIO.input(LED_SERVER) == 0:
-        GPIO.output(LED_SERVER, GPIO.HIGH)
+    if led_server_status == 0:
+        LedServerOn()
     else:
-        GPIO.output(LED_SERVER, GPIO.LOW)
+        LedServerOff()
 
         
 server_already_toggling = 0
@@ -73,19 +71,22 @@ def LedServerToggle_Thread():
 ############
 # LED Link #
 ############
+led_link_status = 0
 def LedLinkOn():
-    GPIO.output(LED_LINK, GPIO.HIGH)
+    led_link_status = 1
+    print ("LED_LINK: High")
 
 
 def LedLinkOff():
-    GPIO.output(LED_LINK, GPIO.LOW)
+    led_link_status = 0
+    print ("LED_LINK: Low")
 
 
 def LedLinkToggle():
-    if GPIO.input(LED_LINK) == 0:
-        GPIO.output(LED_LINK, GPIO.HIGH)
+    if led_link_status == 0:
+        LedLinkOn()
     else:
-        GPIO.output(LED_LINK, GPIO.LOW)
+        LedLinkOff()
 
         
 link_already_toggling = 0
@@ -121,11 +122,11 @@ def LedLinkToggle_Thread():
 # SW_RX_TX #
 ############
 def SW_TxOn():
-    GPIO.output(SW_RX_TX, GPIO.HIGH)
+    print ("SW_RX_TX: High")
 
 
 def SW_TxOff():
-    GPIO.output(SW_RX_TX, GPIO.LOW)
+    print ("SW_RX_TX: Low")
 
 
 def SW_RxOn():
