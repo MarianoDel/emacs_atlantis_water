@@ -36,7 +36,18 @@ def TestLink():
     print ("ending toggling")
     LedLinkToggleContinous('stop')
     print ("test ended!")
-    
+
+
+def TestGpio17():
+    print ("Test gpio17 20 sequences")
+    for i in range(20):
+        SW_TxOn()
+        time.sleep(0.001)
+        SW_TxOff()
+        time.sleep(0.001)
+
+    print ("ending toggling, test ended")
+
 
     
 ##############
@@ -44,6 +55,7 @@ def TestLink():
 ##############
 TestServer()
 TestLink()
+TestGpio17()
 
 
 

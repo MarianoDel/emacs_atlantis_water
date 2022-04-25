@@ -12,6 +12,7 @@
 #include "hard.h"
 #include "usart.h"
 #include "stm32f0xx.h"
+#include "tim.h"
 
 #include <string.h>
 
@@ -89,10 +90,30 @@ void Usart1SendUnsigned(unsigned char * send, unsigned char size)
 {
     if ((ptx1_pckt_index + size) < &tx1buff[SIZEOF_TXDATA])
     {
-        SW_RX_TX_DE;
         memcpy((unsigned char *)ptx1_pckt_index, send, size);
         ptx1_pckt_index += size;
         USART1->CR1 |= USART_CR1_TXEIE;
+    }
+}
+
+
+void Usart1SendDelayed (char * send)
+{
+    unsigned char i;
+
+    i = strlen(send);
+    if (i < SIZEOF_TXDATA)
+    {
+        USART1->CR1 &= (~USART_CR1_RE);    // disable usart rx
+        SW_RX_TX_DE;
+        Wait_ms(1);
+        ptx1_pckt_index = tx1buff;
+        memcpy((unsigned char *)ptx1_pckt_index, send, i);
+        ptx1_pckt_index += i;
+        USART1->CR1 |= USART_CR1_TXEIE;
+        Wait_ms(i + 2);
+        SW_RX_TX_RE_NEG;
+        USART1->CR1 |= USART_CR1_RE;    // enable usart rx
     }
 }
 
@@ -166,16 +187,17 @@ void USART1_IRQHandler(void)
             ptx1 = tx1buff;
             ptx1_pckt_index = tx1buff;
             USART1->CR1 &= ~USART_CR1_TXEIE;
-            USART1->CR1 |= USART_CR1_TCIE;    //enable transmision complete int
+            // USART1->CR1 |= USART_CR1_TCIE;    //enable transmision complete int
         }
     }
 
-    if ((USART1->CR1 & USART_CR1_TCIE) &&
-        (USART1->ISR & USART_ISR_TC))
-    {
-        USART1->CR1 &= ~USART_CR1_TCIE;
-        SW_RX_TX_RE_NEG;
-    }
+    // if ((USART1->CR1 & USART_CR1_TCIE) &&
+    //     (USART1->ISR & USART_ISR_TC))
+    // {
+    //     USART1->CR1 &= ~USART_CR1_TCIE;
+    //     SW_RX_TX_RE_NEG;
+    //     USART1->CR1 |= USART_CR1_RE;    // enable usart rx
+    // }
 
     if ((USART1->ISR & USART_ISR_ORE) || (USART1->ISR & USART_ISR_NE) || (USART1->ISR & USART_ISR_FE))
     {

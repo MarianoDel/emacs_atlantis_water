@@ -15,7 +15,7 @@
 
 
 // Module Private Types & Macros -----------------------------------------------
-#define LED_LINK_TIMEOUT    150
+#define LED_LINK_TIMEOUT    100
 #define LED_PULSE_TOGGLE_TIMEOUT    150
 #define LED_PULSE_CYCLES    40    // total 6 secs
 

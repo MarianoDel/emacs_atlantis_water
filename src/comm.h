@@ -24,6 +24,10 @@ typedef enum {
 } comm_resp_e;
 
 
+#define VALID_PKT_KEEP    0x01
+#define VALID_PKT_OK    0x02
+#define VALID_PKT_NOK    0x04
+
 // Module Exported Functions ---------------------------------------------------
 void COMM_SendKeepAlive (void);
 void COMM_SendOK (void);

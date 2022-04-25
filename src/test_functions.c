@@ -18,6 +18,8 @@
 #include "dsp.h"
 #include "stm32f0xx.h"
 
+#include "usart.h"
+#include "comm.h"
 
 
 #include <stdio.h>
@@ -29,6 +31,7 @@
 // Externals -------------------------------------------------------------------
 extern volatile unsigned short timer_standby;
 extern volatile unsigned short adc_ch [];
+extern unsigned char valid_packet;
 
 
 // Globals ---------------------------------------------------------------------
@@ -39,6 +42,8 @@ void TF_Led(void);
 void TF_Pulse_Inputs_Led_Outputs (void);
 void TF_Adc_Inputs_Led_Outputs (void);
 void TF_Pulse_Inputs_Led_Outputs_Filtered (void);
+void TF_Echo_Usart1 (void);
+void TF_LinkUp_Usart1 (void);
 
 
 // Module Functions ------------------------------------------------------------
@@ -47,7 +52,9 @@ void TF_Hardware_Tests (void)
     // TF_Led ();
     // TF_Pulse_Inputs_Led_Outputs ();
     // TF_Adc_Inputs_Led_Outputs ();
-    TF_Pulse_Inputs_Led_Outputs_Filtered ();
+    // TF_Pulse_Inputs_Led_Outputs_Filtered ();
+    // TF_Echo_Usart1 ();
+    TF_LinkUp_Usart1 ();
 }
 
 
@@ -226,6 +233,64 @@ void TF_Pulse_Inputs_Led_Outputs_Filtered (void)
                 Led_Pulse4_Off();
 
         }
+    }
+}
+
+
+void TF_LinkUp_Usart1 (void)
+{
+    char local_buff [128] = { 0 };
+    
+    // Init Usart1
+    Usart1Config ();
+
+    while (1)
+    {
+        if (Usart1HaveData())
+        {
+            Usart1HaveDataReset();
+            Usart1ReadBuffer((unsigned char *) local_buff, 128);
+            COMM_ProcessPayload(local_buff);
+
+            if (valid_packet)
+            {
+                valid_packet = 0;
+                timer_standby = 1500;
+                Led_Link_On();
+            }
+        }
+
+        if (!timer_standby)
+            Led_Link_Off();
+        
+    }
+}
+
+
+void TF_Echo_Usart1 (void)
+{
+    char local_buff [128] = { 0 };
+    
+    // Init Usart1
+    Usart1Config ();
+
+    while (1)
+    {
+        if (Usart1HaveData())
+        {
+            Usart1HaveDataReset();
+            Usart1ReadBuffer((unsigned char *) local_buff, 128);
+            timer_standby = 1000;
+            Led_Link_On();
+
+            // do the echo
+            Wait_ms(5);
+            Usart1SendDelayed(local_buff);
+        }
+
+        if (!timer_standby)
+            Led_Link_Off();
+        
     }
 }
 

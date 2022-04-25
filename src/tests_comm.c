@@ -199,7 +199,6 @@ void Test_Comms_Manager (void)
     {
         COMM_Manager_SM ();
         COMM_Timeouts ();
-
         LF_Timeouts ();
     }
 

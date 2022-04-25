@@ -12,6 +12,7 @@
 #include "comm.h"
 #include "usart.h"
 #include "led_functions.h"
+#include "tim.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -34,10 +35,11 @@ typedef enum {
 
 
 #define TT_PACKET    20    //20ms for timeouts
-#define TT_MGR_PACKET_NO_LINK    1000
+#define TT_MGR_PACKET_NO_LINK    5000
 #define TT_MGR_PACKET_ERR_LINK    1050
 #define PACKETS_FOR_LINK_DOWN    5
 
+#define Usart1Send(X)    Usart1SendDelayed(X)
 // Externals -------------------------------------------------------------------
 
 
@@ -64,19 +66,18 @@ void COMM_ProcessPayload (char * payload)
 {
     if (!strncmp(payload, "keepalive", sizeof ("keepalive") - 1))
     {
-        valid_packet = 1;
-        COMM_SendOK();
+        valid_packet |= VALID_PKT_KEEP;
     }
 
     else if (!strncmp(payload, "ok", sizeof ("ok") - 1))
     {
-        valid_packet = 1;
+        valid_packet |= VALID_PKT_OK;
         send_packet_ack = resp_sended_ok;
     }
 
     else if (!strncmp(payload, "nok", sizeof ("nok") - 1))
     {
-        valid_packet = 1;
+        valid_packet |= VALID_PKT_NOK;
         send_packet_ack = resp_sended_nok;
     }
 }
@@ -185,6 +186,32 @@ manager_state_e manager_state = MGR_INIT;
 unsigned char no_pckt_cnt = 0;
 void COMM_Manager_SM (void)
 {
+    unsigned char valid_pkt_rx = 0;
+
+    if (Usart1HaveData())
+    {
+        char local [128] = { 0 };
+            
+        Usart1HaveDataReset();
+        Usart1ReadBuffer((unsigned char *) local, 128);
+        COMM_ProcessPayload(local);
+
+        if (valid_packet & VALID_PKT_KEEP)
+        {
+            valid_packet = 0;
+            valid_pkt_rx = 1;
+            Wait_ms(5);
+            COMM_SendOK();
+        }
+
+        if ((valid_packet & VALID_PKT_OK) ||
+            (valid_packet & VALID_PKT_NOK))
+        {
+            valid_packet = 0;
+            valid_pkt_rx = 1;
+        }
+    }
+    
     switch (manager_state)
     {
     case MGR_INIT:
@@ -194,9 +221,9 @@ void COMM_Manager_SM (void)
         break;
 
     case MGR_NO_LINK:
-        if (valid_packet)
+        if (valid_pkt_rx)
         {
-            valid_packet = 0;
+            valid_pkt_rx = 0;
             manager_timer = TT_MGR_PACKET_NO_LINK;
             LF_Link_Set();
             no_pckt_cnt = 0;
@@ -212,9 +239,9 @@ void COMM_Manager_SM (void)
         break;
 
     case MGR_IN_LINK:
-        if (valid_packet)
+        if (valid_pkt_rx)
         {
-            valid_packet = 0;
+            valid_pkt_rx = 0;
             no_pckt_cnt = 0;
             manager_timer = TT_MGR_PACKET_NO_LINK;
         }
@@ -229,7 +256,10 @@ void COMM_Manager_SM (void)
                 manager_timer = TT_MGR_PACKET_ERR_LINK;
             }
             else
+            {
+                LF_Link_Reset();
                 manager_state--;
+            }
         }
         break;
 

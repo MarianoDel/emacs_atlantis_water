@@ -23,6 +23,7 @@ unsigned char Usart1ReadBuffer (unsigned char *, unsigned short);
 void USART1_IRQHandler(void);
 void Usart1Send (char *);
 void Usart1SendUnsigned(unsigned char *, unsigned char);
+void Usart1SendDelayed (char * send);
 
 unsigned char Usart1HaveData (void);
 void Usart1HaveDataReset (void);

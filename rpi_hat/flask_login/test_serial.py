@@ -44,8 +44,9 @@ def TestSerialWrite():
     print ("Test sending 10 keepalives")
     for i in range(10):
         SW_TxOn()
+        time.sleep(0.001)
         data_to_send = "keepalive\n"
-        time_for_send = len(data_to_send)
+        time_for_send = len(data_to_send) + 2
         ser.Write(data_to_send)
         time.sleep(time_for_send / 1000)
         SW_TxOff()
