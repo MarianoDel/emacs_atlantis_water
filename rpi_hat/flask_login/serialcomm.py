@@ -3,19 +3,26 @@ import threading
 import time
 
 
-def ReadBytes(self, cb):
+def ReadBytes(self, cb, show_rx=True):
     t = threading.currentThread()
 
     while getattr(t, "do_run", True):
         datar = self.ser.readline()
         ## timeout or readed bytes
+        data_cb = ''
+        send_cb = False
         if datar != b'':
             try:
-                print(datar)
-                cb((datar).decode())
+                if show_rx:
+                    print(datar)
+                    
+                data_cb = (datar).decode()
+                send_cb = True
             except:
                 pass        
 
+            if send_cb:
+                cb(data_cb)
 
 class SerialComm:
     """
@@ -32,7 +39,7 @@ class SerialComm:
 
     port_open = False
 
-    def __init__(self, callback, port, velocidad=9600):
+    def __init__(self, callback, port, velocidad=9600, show_rx=True):
         """
         Abrir puerto seleccionado
         """
@@ -46,7 +53,7 @@ class SerialComm:
                 self.port_open = True
 
             #comienzo el thread de lectura
-            self.hilo1 = threading.Thread(target=ReadBytes, args=(self, callback))
+            self.hilo1 = threading.Thread(target=ReadBytes, args=(self, callback, show_rx))
             self.hilo1.start()
         except:
             print ("Port Not Open\n")

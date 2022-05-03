@@ -88,6 +88,20 @@ def LedLinkToggle():
     else:
         LedLinkOff()
 
+
+tplink = threading.Thread()
+def LedLinkPulse():
+    global tplink
+
+    if led_link_status == 0:
+        LedLinkOn()
+        tplink = threading.Timer(interval=0.1,function=LedLinkOff)
+        tplink.start()
+    else:
+        LedLinkOff()
+        tplink = threading.Timer(interval=0.1,function=LedLinkOn)
+        tplink.start()
+
         
 link_already_toggling = 0
 tlink = threading.Thread()

@@ -73,21 +73,55 @@ def LedServerToggle_Thread():
 ############
 # LED Link #
 ############
+tplink = threading.Thread()
+
 def LedLinkOn():
+    global tplink
+
+    if tplink.is_alive():
+        tplink.cancel()
+        
     GPIO.output(LED_LINK, GPIO.HIGH)
 
 
 def LedLinkOff():
+    global tplink
+
+    if tplink.is_alive():
+        tplink.cancel()
+
     GPIO.output(LED_LINK, GPIO.LOW)
 
 
 def LedLinkToggle():
+    global tplink
+
+    if tplink.is_alive():
+        tplink.cancel()
+
     if GPIO.input(LED_LINK) == 0:
         GPIO.output(LED_LINK, GPIO.HIGH)
     else:
         GPIO.output(LED_LINK, GPIO.LOW)
 
+
+def LedLinkPulse():
+    global tplink
+
+    if tplink.is_alive():
+        return
+
+    if GPIO.input(LED_LINK) == 0:
+        LedLinkOn()
+        tplink = threading.Timer(interval=0.1,function=LedLinkOff)
+        tplink.start()
+    else:
+        LedLinkOff()
+        tplink = threading.Timer(interval=0.1,function=LedLinkOn)
+        tplink.start()
+
         
+
 link_already_toggling = 0
 tlink = threading.Thread()
 def LedLinkToggleContinous(action):

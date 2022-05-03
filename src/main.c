@@ -29,6 +29,7 @@
 
 // Module Types Constants and Macros -------------------------------------------
 typedef enum {
+    MAIN_WAIT_TO_START,
     MAIN_CHECK_P1,
     MAIN_SEND_P1,
     MAIN_WAIT_ACK_P1,
@@ -115,12 +116,21 @@ int main(void)
     main_state_e main_state = MAIN_CHECK_P1;
     comm_resp_e resp_comm = resp_working;
 
+    unsigned char pck_tx_error = 0;
+    
     COMM_Manager_Reset_SM ();
 
     while (1)
     {
         switch (main_state)
         {
+        case MAIN_WAIT_TO_START:
+            if (!timer_standby)
+            {
+                main_state++;
+            }
+            break;
+
         case MAIN_CHECK_P1:
             pulses = HARD_GetPulses(0);
             if (pulses)
@@ -129,7 +139,7 @@ int main(void)
                 main_state = MAIN_CHECK_P2;
             
             break;
-
+            
         case MAIN_SEND_P1:
             if ((COMM_Manager_In_Link()) &&
                 (COMM_ReadyToSend()))
@@ -141,8 +151,10 @@ int main(void)
                 if (COMM_SendPacket (send_buff) == resp_working)
                     main_state++;
                 else
+                {
+                    pck_tx_error++;
                     main_state = MAIN_CHECK_P2;
-                
+                }
             }
             break;
 
@@ -156,6 +168,11 @@ int main(void)
                     unsigned short remain_pulses = HARD_GetPulses(0);
                     HARD_SetPulses(0, remain_pulses - pulses);
                     pulses = 0;
+                }
+                else if ((resp_comm == resp_sended_nok) ||
+                         (resp_comm == resp_timeout))
+                {
+                    pck_tx_error++;
                 }
 
                 main_state = MAIN_CHECK_P2;
@@ -182,8 +199,10 @@ int main(void)
                 if (COMM_SendPacket (send_buff) == resp_working)
                     main_state++;
                 else
+                {
+                    pck_tx_error++;                
                     main_state = MAIN_CHECK_P3;
-
+                }
             }
             break;
 
@@ -197,6 +216,11 @@ int main(void)
                     unsigned short remain_pulses = HARD_GetPulses(1);
                     HARD_SetPulses(1, remain_pulses - pulses);
                     pulses = 0;                    
+                }
+                else if ((resp_comm == resp_sended_nok) ||
+                         (resp_comm == resp_timeout))
+                {
+                    pck_tx_error++;
                 }
 
                 main_state = MAIN_CHECK_P3;
@@ -223,8 +247,10 @@ int main(void)
                 if (COMM_SendPacket (send_buff) == resp_working)
                     main_state++;
                 else
+                {
+                    pck_tx_error++;                
                     main_state = MAIN_CHECK_P4;
-
+                }
             }
             break;
 
@@ -238,6 +264,11 @@ int main(void)
                     unsigned short remain_pulses = HARD_GetPulses(2);
                     HARD_SetPulses(2, remain_pulses - pulses);
                     pulses = 0;                    
+                }
+                else if ((resp_comm == resp_sended_nok) ||
+                         (resp_comm == resp_timeout))
+                {
+                    pck_tx_error++;
                 }
 
                 main_state = MAIN_CHECK_P4;
@@ -264,8 +295,10 @@ int main(void)
                 if (COMM_SendPacket (send_buff) == resp_working)
                     main_state++;
                 else
+                {
+                    pck_tx_error++;                
                     main_state = MAIN_CHECK_P1;
-
+                }
             }
             break;
 
@@ -279,6 +312,11 @@ int main(void)
                     unsigned short remain_pulses = HARD_GetPulses(3);
                     HARD_SetPulses(3, remain_pulses - pulses);
                     pulses = 0;                    
+                }
+                else if ((resp_comm == resp_sended_nok) ||
+                         (resp_comm == resp_timeout))
+                {
+                    pck_tx_error++;
                 }
 
                 main_state = MAIN_CHECK_P1;
@@ -302,6 +340,13 @@ int main(void)
         HARD_UpdatePulsesFilters();
         COMM_Manager_SM();
 
+        // check for link down
+        if (pck_tx_error > 5)
+        {
+            pck_tx_error = 0;
+            COMM_Manager_Reset_SM ();
+            timer_standby = 1000;
+        }
 
         // pulse indication led its on absolute value
         if (HARD_GetPulsesValue(0))

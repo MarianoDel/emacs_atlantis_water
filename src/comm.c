@@ -36,7 +36,7 @@ typedef enum {
 
 #define TT_PACKET    20    //20ms for timeouts
 #define TT_MGR_PACKET_NO_LINK    5000
-#define TT_MGR_PACKET_ERR_LINK    1050
+#define TT_MGR_PACKET_KEEP_LINK    1500
 #define PACKETS_FOR_LINK_DOWN    5
 
 #define Usart1Send(X)    Usart1SendDelayed(X)
@@ -46,6 +46,7 @@ typedef enum {
 // Globals ---------------------------------------------------------------------
 volatile unsigned char send_packet_timeout = 0;
 volatile unsigned short manager_timer = 0;
+volatile unsigned short manager_timer_tx = 0;
 
 unsigned short seq = 0;
 // unsigned short send_packet_expected_seq = 0;
@@ -183,7 +184,6 @@ unsigned short COMM_WritePacket (char * p_buff, char * p_to_send)
 
 
 manager_state_e manager_state = MGR_INIT;
-unsigned char no_pckt_cnt = 0;
 void COMM_Manager_SM (void)
 {
     unsigned char valid_pkt_rx = 0;
@@ -201,15 +201,16 @@ void COMM_Manager_SM (void)
             valid_packet = 0;
             valid_pkt_rx = 1;
             Wait_ms(5);
+            LF_Link_Pulse();
             COMM_SendOK();
         }
 
-        if ((valid_packet & VALID_PKT_OK) ||
-            (valid_packet & VALID_PKT_NOK))
-        {
-            valid_packet = 0;
-            valid_pkt_rx = 1;
-        }
+        // if ((valid_packet & VALID_PKT_OK) ||
+        //     (valid_packet & VALID_PKT_NOK))
+        // {
+        //     valid_packet = 0;
+        //     valid_pkt_rx = 1;
+        // }
     }
     
     switch (manager_state)
@@ -221,20 +222,21 @@ void COMM_Manager_SM (void)
         break;
 
     case MGR_NO_LINK:
-        if (valid_pkt_rx)
+        // send my keepalive
+        if (!manager_timer_tx)
         {
-            valid_pkt_rx = 0;
-            manager_timer = TT_MGR_PACKET_NO_LINK;
-            LF_Link_Set();
-            no_pckt_cnt = 0;
-            manager_state++;
+            COMM_SendKeepAlive ();            
+            LF_Link_Pulse();
+            manager_timer_tx = TT_MGR_PACKET_KEEP_LINK;            
         }
 
-        if (!manager_timer)
+        // wait to see the ok
+        if (valid_packet & VALID_PKT_OK)
         {
-            COMM_SendKeepAlive ();
-            LF_Link_Pulse();
-            manager_timer = TT_MGR_PACKET_ERR_LINK;            
+            valid_packet = 0;
+            manager_timer = TT_MGR_PACKET_NO_LINK;
+            LF_Link_Set();
+            manager_state++;
         }
         break;
 
@@ -242,25 +244,25 @@ void COMM_Manager_SM (void)
         if (valid_pkt_rx)
         {
             valid_pkt_rx = 0;
-            no_pckt_cnt = 0;
             manager_timer = TT_MGR_PACKET_NO_LINK;
         }
 
-        if (!manager_timer)
+        if (valid_packet & VALID_PKT_OK)
         {
-            if (no_pckt_cnt < PACKETS_FOR_LINK_DOWN)
-            {
-                no_pckt_cnt++;
-                COMM_SendKeepAlive ();
-                LF_Link_Pulse();
-                manager_timer = TT_MGR_PACKET_ERR_LINK;
-            }
-            else
-            {
-                LF_Link_Reset();
-                manager_state--;
-            }
+            valid_packet = 0;
+            manager_timer = TT_MGR_PACKET_NO_LINK;
         }
+        
+        if (!manager_timer_tx)
+        {
+            COMM_SendKeepAlive ();
+            LF_Link_Pulse();
+            manager_timer_tx = TT_MGR_PACKET_KEEP_LINK;
+        }
+
+        if (!manager_timer)    // link its down
+            manager_state = MGR_INIT;
+
         break;
 
     default:
@@ -292,6 +294,9 @@ void COMM_Timeouts (void)
 
     if (manager_timer)
         manager_timer--;
+
+    if (manager_timer_tx)
+        manager_timer_tx--;
     
 }
 //--- end of file ---//
