@@ -58,6 +58,7 @@ volatile unsigned short wait_ms_var = 0;
 // Globals ---------------------------------------------------------------------
 //-- Timers globals ----------------------------------
 volatile unsigned short timer_standby = 0;
+volatile unsigned short timer_concurrent = 0;
 
 // //-- for the filters and outputs
 // ma32_u16_data_obj_t pote_1_filter;
@@ -329,9 +330,9 @@ int main(void)
         }
 
         // concurrent things
-        if (!timer_standby)
+        if (!timer_concurrent)
         {
-            timer_standby = 1;
+            timer_concurrent = 1;
             HARD_Timeouts();
             COMM_Timeouts();
             LF_Timeouts();
@@ -340,7 +341,7 @@ int main(void)
         HARD_UpdatePulsesFilters();
         COMM_Manager_SM();
 
-        // check for link down
+        // check for link down or not packet delivered
         if (pck_tx_error > 5)
         {
             pck_tx_error = 0;
@@ -387,6 +388,9 @@ void TimingDelay_Decrement(void)
     if (timer_standby)
         timer_standby--;
 
+    if (timer_concurrent)
+        timer_concurrent--;
+    
 }
 
 

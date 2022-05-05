@@ -11,12 +11,29 @@ SW_RX_TX = 17
 LED_SERVER = 27
 LED_LINK = 22
 
+# for testing outputs
+SW_CH1 = 26
+SW_CH2 = 19
+SW_CH3 = 13
+SW_CH4 = 6
+
+
 def GpiosInit():
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(SW_RX_TX, GPIO.OUT)
     GPIO.setup(LED_SERVER, GPIO.OUT)
     GPIO.setup(LED_LINK, GPIO.OUT)
+    
+    GPIO.setup(SW_CH1, GPIO.OUT)
+    GPIO.setup(SW_CH2, GPIO.OUT)
+    GPIO.setup(SW_CH3, GPIO.OUT)
+    GPIO.setup(SW_CH4, GPIO.OUT)
+
+    GPIO.output(SW_CH1, GPIO.HIGH)
+    GPIO.output(SW_CH2, GPIO.HIGH)
+    GPIO.output(SW_CH3, GPIO.HIGH)
+    GPIO.output(SW_CH4, GPIO.HIGH)    
 
 
 def GpiosCleanUp():
@@ -121,35 +138,6 @@ def LedLinkPulse():
         tplink.start()
 
         
-
-link_already_toggling = 0
-tlink = threading.Thread()
-def LedLinkToggleContinous(action):
-    global link_already_toggling
-    global tlink
-
-    if action == 'start':
-        if not link_already_toggling:
-            link_already_toggling = 1
-            tlink = threading.Thread(target=LedLinkToggle_Thread, args=())
-            tlink.start()
-            
-    elif action == 'stop':
-        if link_already_toggling:
-            tlink.do_run = False
-            LedLinkOff()
-            link_already_toggling = 0
-            tlink.join()
-
-
-def LedLinkToggle_Thread():
-    tlink = threading.currentThread()
-    while getattr(tlink, "do_run", True):
-        LedLinkOn()
-        time.sleep(1.3)
-        LedLinkOff()
-        time.sleep(0.7)
-        
         
 ############
 # SW_RX_TX #
@@ -165,6 +153,37 @@ def SW_TxOff():
 def SW_RxOn():
     SW_TxOff()
 
+
+############################
+# Channels Switch Function #
+############################
+def SW_Ch1On():
+    GPIO.output(SW_CH1, GPIO.LOW)
+
+def SW_Ch1Off():
+    GPIO.output(SW_CH1, GPIO.HIGH)
+
+    
+def SW_Ch2On():
+    GPIO.output(SW_CH2, GPIO.LOW)
+
+def SW_Ch2Off():
+    GPIO.output(SW_CH2, GPIO.HIGH)
+
+    
+def SW_Ch3On():
+    GPIO.output(SW_CH3, GPIO.LOW)
+
+def SW_Ch3Off():
+    GPIO.output(SW_CH3, GPIO.HIGH)
+
+    
+def SW_Ch4On():
+    GPIO.output(SW_CH4, GPIO.LOW)
+
+def SW_Ch4Off():
+    GPIO.output(SW_CH4, GPIO.HIGH)
+    
     
     
 

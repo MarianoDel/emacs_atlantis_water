@@ -5,6 +5,7 @@ import time
 import sys
 import os
 import threading
+import random
 
 
 ###########
@@ -32,6 +33,7 @@ answer_ok = False
 link_up = False
 last_sequence = -1
 meas_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
+gen_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
 keeps = 0
 okeys = 0
 noks = 0
@@ -40,11 +42,15 @@ link_up_tx_timeout = 0
 link_up_rx_timeout = 0
 link_up_led = False
 tt = 0
-key_choice = ''
 tp1 = threading.Thread()
 tp2 = threading.Thread()
 tp3 = threading.Thread()
 tp4 = threading.Thread()
+
+ch1_timeout = 0
+ch2_timeout = 0
+ch3_timeout = 0
+ch4_timeout = 0    
 
 init_time = time.time()
 
@@ -240,12 +246,7 @@ def display_title_bar (port_state=False, link_up=False):
     print("\t**********************************************")
     print("\t***    KIRNO - Atlantis Pulses Test -      ***")
     print("\t**********************************************")
-    print("\t[1] Send pulse ch1.")
-    print("\t[2] Send pulse ch2.")
-    print("\t[3] Send pulse ch3.")
-    print("\t[4] Send pulse ch4.")
-    print("\t**********************************************")
-    print("\t* Port: {}\tLink: {}\tElapsed: {:.2f}\t  *".format(port_state, link_up, elapsed_time))
+    print("\t* Port: {}  Link: {}  Elapsed: {:.2f}\t     *".format(port_state, link_up, elapsed_time))
     print("\t**********************************************")
     print(f'\t* keeps: {keeps} ok: {okeys} nok: {noks} bad_pckt: {bad_pckt}')
     print(f'\t* rate: {perc:02.02f}%')
@@ -253,24 +254,10 @@ def display_title_bar (port_state=False, link_up=False):
     print("\t**********************************************")
     print(f'\t*\tch1: {meas_channel[1]}\tch2: {meas_channel[2]}\tch3: {meas_channel[3]}\tch4: {meas_channel[4]}\t     *')
     print("\t**********************************************")    
+    print(f'\t*\tch1: {gen_channel[1]}\tch2: {gen_channel[2]}\tch3: {gen_channel[3]}\tch4: {gen_channel[4]}\t     *')
+    print("\t**********************************************")
     print("")
 
-
-def get_user_choice():
-    global key_choice
-
-    loop = True
-    while loop:
-        # Let users know what they can do.
-        choice = input(" your choice: ")
-        key_choice = choice
-        if choice == 'q':
-            loop = False
-            
-
-def start_key_input ():
-    hilo1 = threading.Thread(target=get_user_choice, args=())
-    hilo1.start()
 
 
 def transmission (data_to_send):
@@ -289,28 +276,28 @@ def transmission_thread (sport, data_to_send):
 
 
 def pulse_ch1 (timer_in_on):
-    in_secs = timer_in_on/1000
+    in_secs = timer_in_on/10
     SW_Ch1On()
     time.sleep(in_secs)
     SW_Ch1Off()
     time.sleep(in_secs)    
-
+    
 def pulse_ch2 (timer_in_on):
-    in_secs = timer_in_on/1000    
+    in_secs = timer_in_on/10
     SW_Ch2On()
     time.sleep(in_secs)    
     SW_Ch2Off()
     time.sleep(in_secs)    
 
 def pulse_ch3 (timer_in_on):
-    in_secs = timer_in_on/1000    
+    in_secs = timer_in_on/10
     SW_Ch3On()
     time.sleep(in_secs)    
     SW_Ch3Off()
     time.sleep(in_secs)    
 
 def pulse_ch4 (timer_in_on):
-    in_secs = timer_in_on/1000    
+    in_secs = timer_in_on/10
     SW_Ch4On()
     time.sleep(in_secs)    
     SW_Ch4Off()
@@ -337,11 +324,14 @@ def TestLinkUp ():
     global link_up_rx_timeout    
     global link_up_led
     global tt
-    global key_choice
     global tp1
     global tp2
     global tp3
     global tp4
+    global ch1_timeout
+    global ch2_timeout
+    global ch3_timeout
+    global ch4_timeout    
     
 
     tt = threading.Timer(interval=0.1, function=ModuleTimeouts)
@@ -352,7 +342,11 @@ def TestLinkUp ():
     update_chart = 0
 
     display_title_bar()
-    start_key_input()
+    ch1_state = 'init'
+    ch2_state = 'init'
+    ch3_state = 'init'
+    ch4_state = 'init'
+
     
     while True:
         # show updated chart
@@ -361,27 +355,71 @@ def TestLinkUp ():
             display_title_bar(ser.port_open, link_up_led)
 
 
-        if key_choice == 'q':
-            print("closing app")
-            return
-        elif key_choice == '1' and tp1.is_alive() == False:
-            tp1 = threading.Thread(target=pulse_ch1, args=(200,))
+        #################
+        # Pulses in Ch1 #
+        #################
+        if ch1_state == 'init':
+            # calculate delay and pulse width
+            ch1_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch1_state = 'waiting'
+        elif ch1_state == 'waiting' and ch1_timeout == 0:
+            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            tp1 = threading.Thread(target=pulse_ch1, args=(pulse_width,))
             tp1.start()
-            key_choice = ''
-        elif key_choice == '2' and tp2.is_alive() == False:
-            tp2 = threading.Thread(target=pulse_ch2, args=(200,))
-            tp2.start()
-            key_choice = ''            
-        elif key_choice == '3' and tp3.is_alive() == False:
-            tp3 = threading.Thread(target=pulse_ch3, args=(200,))
-            tp3.start()
-            key_choice = ''            
-        elif key_choice == '4' and tp4.is_alive() == False:
-            tp4 = threading.Thread(target=pulse_ch4, args=(200,))
-            tp4.start()
-            key_choice = ''            
-            
+            gen_channel[1] += 1
+            ch1_state = 'pulsing'
+        elif ch1_state == 'pulsing' and tp1.is_alive() == False:
+            ch1_state = 'init'
 
+                
+        #################
+        # Pulses in Ch2 #
+        #################            
+        if ch2_state == 'init':
+            # calculate delay and pulse width
+            ch2_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch2_state = 'waiting'
+        elif ch2_state == 'waiting' and ch2_timeout == 0:
+            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            tp2 = threading.Thread(target=pulse_ch2, args=(pulse_width,))
+            tp2.start()
+            gen_channel[2] += 1
+            ch2_state = 'pulsing'
+        elif ch2_state == 'pulsing' and tp2.is_alive() == False:
+            ch2_state = 'init'
+
+        #################
+        # Pulses in Ch3 #
+        #################
+        if ch3_state == 'init':
+            # calculate delay and pulse width
+            ch3_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch3_state = 'waiting'
+        elif ch3_state == 'waiting' and ch3_timeout == 0:
+            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            tp3 = threading.Thread(target=pulse_ch3, args=(pulse_width,))
+            tp3.start()
+            gen_channel[3] += 1
+            ch3_state = 'pulsing'
+        elif ch3_state == 'pulsing' and tp3.is_alive() == False:
+            ch3_state = 'init'
+
+        #################
+        # Pulses in Ch4 #
+        #################
+        if ch4_state == 'init':
+            # calculate delay and pulse width
+            ch4_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch4_state = 'waiting'
+        elif ch4_state == 'waiting' and ch4_timeout == 0:
+            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            tp4 = threading.Thread(target=pulse_ch4, args=(pulse_width,))
+            tp4.start()
+            gen_channel[4] += 1
+            ch4_state = 'pulsing'
+        elif ch4_state == 'pulsing' and tp4.is_alive() == False:
+            ch4_state = 'init'
+        
         # receiv 'ok' to a 'keepalive' 
         if link_up:
             link_up = False
@@ -411,16 +449,33 @@ def TestLinkUp ():
         time.sleep(0.001)
     
 
+# 100ms timer
 def ModuleTimeouts ():
     global link_up_tx_timeout
     global link_up_rx_timeout
     global tt
+    global ch1_timeout
+    global ch2_timeout
+    global ch3_timeout
+    global ch4_timeout    
     
     if link_up_tx_timeout > 0:
         link_up_tx_timeout -= 1
 
     if link_up_rx_timeout > 0:
         link_up_rx_timeout -= 1
+
+    if ch1_timeout > 0:
+        ch1_timeout -= 1
+
+    if ch2_timeout > 0:
+        ch2_timeout -= 1
+
+    if ch3_timeout > 0:
+        ch3_timeout -= 1
+
+    if ch4_timeout > 0:
+        ch4_timeout -= 1                
         
     tt = threading.Timer(interval=0.1, function=ModuleTimeouts)    
     tt.start()

@@ -5,22 +5,26 @@
    - check the inputs pairs intergrity and show states in the pulses led
    - check the RS-485 connection and show up state on link led
 
-** Hardware Start [4/5]
+** Hardware Start [5/5]
    - [X] 4 channels LED outputs
    - [X] 4 channels pulses inputs
    - [X] link LED output
    - [X] ADC inputs for channels
-   - [ ] Usart rs485 output
+   - [X] Usart rs485 output
 
 
-** Firmware [0/3]
-   - [ ] ADC inputs thresholds
-   - [ ] noise filter on digital inputs
-   - [ ] usart to rs485 link comms
+** Firmware [3/3]
+   - [X] ADC inputs thresholds
+   - [X] noise filter on digital inputs
+   - [X] usart to rs485 link comms
 
 
 * Testing on Client Date DD-MM-YYYY
 ** some problem?
    - what was the detected problem
 
+* Data
+** a fireman hose 19liter/s
+** the ekm metering SPWM-150 10liter/pulse
+   - so two pulses per second when using for a fire
 
