@@ -47,6 +47,7 @@ typedef enum {
 volatile unsigned char send_packet_timeout = 0;
 volatile unsigned short manager_timer = 0;
 volatile unsigned short manager_timer_tx = 0;
+unsigned char send_ok_enable = 0;
 
 unsigned short seq = 0;
 // unsigned short send_packet_expected_seq = 0;
@@ -59,7 +60,7 @@ unsigned char valid_packet = 0;
 
 
 // Module Private Functions ----------------------------------------------------
-void CommsCheckSendOK (char * orig_num);
+unsigned char COMM_SendOKEnable (void);
 
 
 // Module Functions ------------------------------------------------------------
@@ -200,9 +201,12 @@ void COMM_Manager_SM (void)
         {
             valid_packet = 0;
             valid_pkt_rx = 1;
-            Wait_ms(5);
-            LF_Link_Pulse();
-            COMM_SendOK();
+            if (COMM_SendOKEnable())
+            {
+                Wait_ms(5);
+                LF_Link_Pulse();
+                COMM_SendOK();
+            }
         }
 
         // if ((valid_packet & VALID_PKT_OK) ||
@@ -216,9 +220,12 @@ void COMM_Manager_SM (void)
     switch (manager_state)
     {
     case MGR_INIT:
-        LF_Link_Reset();
-        manager_timer = 0;
-        manager_state++;
+        if (!manager_timer)
+        {
+            manager_timer = 0;
+            COMM_SendOKSet();    // start answering keepsalive
+            manager_state++;
+        }
         break;
 
     case MGR_NO_LINK:
@@ -272,9 +279,67 @@ void COMM_Manager_SM (void)
 }
 
 
+#define WINDOW_WAIT_ANSWER    50
+#define WINDOW_CHANNEL_SPACE    200
+
+#define WINDOW_START_CH1    50
+#define WINDOW_END_CH1    (WINDOW_START_CH1 + WINDOW_CHANNEL_SPACE)    //250ms
+
+#define WINDOW_START_CH2    (WINDOW_END_CH1 + WINDOW_WAIT_ANSWER)    //300ms
+#define WINDOW_END_CH2    (WINDOW_START_CH2 + WINDOW_CHANNEL_SPACE)    //500ms
+
+#define WINDOW_START_CH3    800
+#define WINDOW_END_CH3    (WINDOW_START_CH3 + WINDOW_CHANNEL_SPACE)    //1000ms
+
+#define WINDOW_START_CH4    (WINDOW_END_CH3 + WINDOW_WAIT_ANSWER)    //1050ms
+#define WINDOW_END_CH4    (WINDOW_START_CH4 + WINDOW_CHANNEL_SPACE)    //1250ms
+
+unsigned char COMM_TimeWindow (unsigned char ch)
+{
+    unsigned char ans = 0;
+    
+    switch (ch)
+    {
+    case CH1_OFFSET:
+        if ((manager_timer_tx >= WINDOW_START_CH1) &&
+            (manager_timer_tx <= WINDOW_END_CH1))
+            ans = 1;
+        break;
+
+    case CH2_OFFSET:
+        if ((manager_timer_tx >= WINDOW_START_CH2) &&
+            (manager_timer_tx <= WINDOW_END_CH2))
+            ans = 1;            
+        break;
+
+    case CH3_OFFSET:
+        if ((manager_timer_tx >= WINDOW_START_CH3) &&
+            (manager_timer_tx <= WINDOW_END_CH3))
+            ans = 1;            
+        break;
+
+    case CH4_OFFSET:
+        if ((manager_timer_tx >= WINDOW_START_CH4) &&
+            (manager_timer_tx <= WINDOW_END_CH4))
+            ans = 1;            
+        break;
+        
+    }
+
+    return ans;
+}
+
+
 void COMM_Manager_Reset_SM (void)
 {
     manager_state = MGR_INIT;
+    LF_Link_Reset();
+}
+
+
+void COMM_Manager_WaitToStart_SM (unsigned short wait_time)
+{
+    manager_timer = wait_time;
 }
 
 
@@ -284,6 +349,24 @@ unsigned char COMM_Manager_In_Link (void)
         return 1;
 
     return 0;
+}
+
+
+unsigned char COMM_SendOKEnable (void)
+{
+    return send_ok_enable;
+}
+
+
+void COMM_SendOKSet (void)
+{
+    send_ok_enable = 1;
+}
+
+
+void COMM_SendOKReset (void)
+{
+    send_ok_enable = 0;
 }
 
 

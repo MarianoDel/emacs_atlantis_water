@@ -32,6 +32,7 @@ class Statics_Info:
 answer_ok = False
 link_up = False
 last_sequence = -1
+last_getted = -1
 meas_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
 gen_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
 keeps = 0
@@ -96,6 +97,7 @@ def MySerialCallback(to_clean_data):
 
 def process_packet (data):
     global last_sequence
+    global last_getted    
     global meas_channel
     global send_ack
     
@@ -105,13 +107,18 @@ def process_packet (data):
         print("bad sequence packet, no process")
         return 0
 
+    last_getted = pkt.sequence
     if pkt.sequence == 0 or \
        pkt.sequence <= last_sequence:
         print("bad sequence number, no process")
         return 0
     
     meas_channel[pkt.channel] += pkt.pulses
-    last_sequence = pkt.sequence
+    if pkt.sequence != 999:
+        last_sequence = pkt.sequence
+    else:
+        last_sequence = 0
+        
     return 1
 
 
@@ -252,10 +259,12 @@ def display_title_bar (port_state=False, link_up=False):
     print(f'\t* rate: {perc:02.02f}%')
     print(f'\t* packet per second: {pps:.02f}')    
     print("\t**********************************************")
-    print(f'\t*\tch1: {meas_channel[1]}\tch2: {meas_channel[2]}\tch3: {meas_channel[3]}\tch4: {meas_channel[4]}\t     *')
+    print(f'\t*get  ch1: {meas_channel[1]}\tch2: {meas_channel[2]}\tch3: {meas_channel[3]}\tch4: {meas_channel[4]}\t     *')
     print("\t**********************************************")    
-    print(f'\t*\tch1: {gen_channel[1]}\tch2: {gen_channel[2]}\tch3: {gen_channel[3]}\tch4: {gen_channel[4]}\t     *')
+    print(f'\t*sent ch1: {gen_channel[1]}\tch2: {gen_channel[2]}\tch3: {gen_channel[3]}\tch4: {gen_channel[4]}\t     *')
     print("\t**********************************************")
+    print(f'\t*seq waited: {last_sequence}\tseq getted: {last_getted}')
+    print("\t**********************************************")    
     print("")
 
 
@@ -331,7 +340,9 @@ def TestLinkUp ():
     global ch1_timeout
     global ch2_timeout
     global ch3_timeout
-    global ch4_timeout    
+    global ch4_timeout
+    global last_sequence
+    global last_getted    
     
 
     tt = threading.Timer(interval=0.1, function=ModuleTimeouts)
@@ -342,10 +353,14 @@ def TestLinkUp ():
     update_chart = 0
 
     display_title_bar()
-    ch1_state = 'init'
-    ch2_state = 'init'
-    ch3_state = 'init'
-    ch4_state = 'init'
+    ch1_state = 'pause'
+    ch2_state = 'pause'
+    ch3_state = 'pause'
+    ch4_state = 'pause'
+    # ch1_state = 'init'
+    # ch2_state = 'init'
+    # ch3_state = 'init'
+    # ch4_state = 'init'
 
     
     while True:
@@ -360,10 +375,12 @@ def TestLinkUp ():
         #################
         if ch1_state == 'init':
             # calculate delay and pulse width
-            ch1_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            # ch1_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch1_timeout = random.randrange(3,30)    #delay from 0.3 to 3 secs            
             ch1_state = 'waiting'
         elif ch1_state == 'waiting' and ch1_timeout == 0:
-            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            # pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            pulse_width = random.randrange(1, 10)    #pulse width from 0.1 to 1 secs            
             tp1 = threading.Thread(target=pulse_ch1, args=(pulse_width,))
             tp1.start()
             gen_channel[1] += 1
@@ -377,10 +394,12 @@ def TestLinkUp ():
         #################            
         if ch2_state == 'init':
             # calculate delay and pulse width
-            ch2_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            # ch2_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch2_timeout = random.randrange(3,30)    #delay from 0.3 to 3 secs
             ch2_state = 'waiting'
         elif ch2_state == 'waiting' and ch2_timeout == 0:
-            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            # pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            pulse_width = random.randrange(1, 10)    #pulse width from 0.1 to 1 secs
             tp2 = threading.Thread(target=pulse_ch2, args=(pulse_width,))
             tp2.start()
             gen_channel[2] += 1
@@ -393,10 +412,12 @@ def TestLinkUp ():
         #################
         if ch3_state == 'init':
             # calculate delay and pulse width
-            ch3_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            # ch3_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch3_timeout = random.randrange(3,30)    #delay from 0.3 to 3 secs
             ch3_state = 'waiting'
         elif ch3_state == 'waiting' and ch3_timeout == 0:
-            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            # pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            pulse_width = random.randrange(1, 10)    #pulse width from 0.1 to 1 secs
             tp3 = threading.Thread(target=pulse_ch3, args=(pulse_width,))
             tp3.start()
             gen_channel[3] += 1
@@ -409,10 +430,12 @@ def TestLinkUp ():
         #################
         if ch4_state == 'init':
             # calculate delay and pulse width
-            ch4_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            # ch4_timeout = random.randrange(10,1000)    #delay from 1 to 100 secs
+            ch4_timeout = random.randrange(3,30)    #delay from 0.3 to 3 secs
             ch4_state = 'waiting'
         elif ch4_state == 'waiting' and ch4_timeout == 0:
-            pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            # pulse_width = random.randrange(1, 10000)    #pulse width from 0.1 to 1000 secs
+            pulse_width = random.randrange(1, 10)    #pulse width from 0.1 to 1 secs
             tp4 = threading.Thread(target=pulse_ch4, args=(pulse_width,))
             tp4.start()
             gen_channel[4] += 1
@@ -439,6 +462,8 @@ def TestLinkUp ():
             if link_up_led:
                 link_up_led = False
                 LedLinkOff()
+                # with link down reset the seq number
+                last_sequence = 0
 
         if link_up_tx_timeout == 0:
             transmission('keepalive\n')

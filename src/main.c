@@ -120,6 +120,7 @@ int main(void)
     unsigned char pck_tx_error = 0;
     
     COMM_Manager_Reset_SM ();
+    COMM_Manager_WaitToStart_SM (0);    //starts inmediately
 
     while (1)
     {
@@ -133,7 +134,7 @@ int main(void)
             break;
 
         case MAIN_CHECK_P1:
-            pulses = HARD_GetPulses(0);
+            pulses = HARD_GetPulses(CH1_OFFSET);
             if (pulses)
                 main_state++;
             else
@@ -143,7 +144,8 @@ int main(void)
             
         case MAIN_SEND_P1:
             if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()))
+                (COMM_ReadyToSend()) &&
+                (COMM_TimeWindow(CH1_OFFSET)))
             {
                 if (pulses > 999)
                     pulses = 999;
@@ -166,8 +168,8 @@ int main(void)
             {
                 if (resp_comm == resp_sended_ok)
                 {
-                    unsigned short remain_pulses = HARD_GetPulses(0);
-                    HARD_SetPulses(0, remain_pulses - pulses);
+                    unsigned short remain_pulses = HARD_GetPulses(CH1_OFFSET);
+                    HARD_SetPulses(CH1_OFFSET, remain_pulses - pulses);
                     pulses = 0;
                 }
                 else if ((resp_comm == resp_sended_nok) ||
@@ -181,7 +183,7 @@ int main(void)
             break;
             
         case MAIN_CHECK_P2:
-            pulses = HARD_GetPulses(1);
+            pulses = HARD_GetPulses(CH2_OFFSET);
             if (pulses)
                 main_state++;
             else
@@ -191,7 +193,8 @@ int main(void)
 
         case MAIN_SEND_P2:
             if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()))
+                (COMM_ReadyToSend()) &&
+                (COMM_TimeWindow(CH2_OFFSET)))
             {
                 if (pulses > 999)
                     pulses = 999;
@@ -214,8 +217,8 @@ int main(void)
             {
                 if (resp_comm == resp_sended_ok)
                 {
-                    unsigned short remain_pulses = HARD_GetPulses(1);
-                    HARD_SetPulses(1, remain_pulses - pulses);
+                    unsigned short remain_pulses = HARD_GetPulses(CH2_OFFSET);
+                    HARD_SetPulses(CH2_OFFSET, remain_pulses - pulses);
                     pulses = 0;                    
                 }
                 else if ((resp_comm == resp_sended_nok) ||
@@ -229,7 +232,7 @@ int main(void)
             break;
 
         case MAIN_CHECK_P3:
-            pulses = HARD_GetPulses(2);
+            pulses = HARD_GetPulses(CH3_OFFSET);
             if (pulses)
                 main_state++;
             else
@@ -239,7 +242,8 @@ int main(void)
 
         case MAIN_SEND_P3:
             if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()))
+                (COMM_ReadyToSend()) &&
+                (COMM_TimeWindow(CH3_OFFSET)))
             {
                 if (pulses > 999)
                     pulses = 999;
@@ -262,8 +266,8 @@ int main(void)
             {
                 if (resp_comm == resp_sended_ok)
                 {
-                    unsigned short remain_pulses = HARD_GetPulses(2);
-                    HARD_SetPulses(2, remain_pulses - pulses);
+                    unsigned short remain_pulses = HARD_GetPulses(CH3_OFFSET);
+                    HARD_SetPulses(CH3_OFFSET, remain_pulses - pulses);
                     pulses = 0;                    
                 }
                 else if ((resp_comm == resp_sended_nok) ||
@@ -277,7 +281,7 @@ int main(void)
             break;
 
         case MAIN_CHECK_P4:
-            pulses = HARD_GetPulses(3);
+            pulses = HARD_GetPulses(CH4_OFFSET);
             if (pulses)
                 main_state++;
             else
@@ -287,7 +291,8 @@ int main(void)
             
         case MAIN_SEND_P4:
             if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()))
+                (COMM_ReadyToSend()) &&
+                (COMM_TimeWindow(CH4_OFFSET)))
             {
                 if (pulses > 999)
                     pulses = 999;
@@ -310,8 +315,8 @@ int main(void)
             {
                 if (resp_comm == resp_sended_ok)
                 {
-                    unsigned short remain_pulses = HARD_GetPulses(3);
-                    HARD_SetPulses(3, remain_pulses - pulses);
+                    unsigned short remain_pulses = HARD_GetPulses(CH4_OFFSET);
+                    HARD_SetPulses(CH4_OFFSET, remain_pulses - pulses);
                     pulses = 0;                    
                 }
                 else if ((resp_comm == resp_sended_nok) ||
@@ -346,7 +351,10 @@ int main(void)
         {
             pck_tx_error = 0;
             COMM_Manager_Reset_SM ();
-            timer_standby = 1000;
+            COMM_Manager_WaitToStart_SM (6000);
+            COMM_SendOKReset();    // not answer to keepalives during this time            
+            main_state = MAIN_WAIT_TO_START;
+            timer_standby = 6000;
         }
 
         // pulse indication led its on absolute value
