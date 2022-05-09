@@ -59,6 +59,7 @@ volatile unsigned short wait_ms_var = 0;
 //-- Timers globals ----------------------------------
 volatile unsigned short timer_standby = 0;
 volatile unsigned short timer_concurrent = 0;
+volatile unsigned short timer_led_show_error = 0;
 
 // //-- for the filters and outputs
 // ma32_u16_data_obj_t pote_1_filter;
@@ -68,6 +69,12 @@ volatile unsigned short timer_concurrent = 0;
 // Module Private Functions ----------------------------------------------------
 void TimingDelay_Decrement(void);
 void SysTickError (void);
+
+void LedChannelShowStates (void);
+void LedChannelShowInnerStates (unsigned char ch, unsigned char global_state);
+void LedChannelShowPulses (void);
+
+unsigned char ADC_LineErrors (unsigned char);
 
 
 // Module Functions ------------------------------------------------------------
@@ -118,7 +125,7 @@ int main(void)
     comm_resp_e resp_comm = resp_working;
 
     unsigned char pck_tx_error = 0;
-    
+
     COMM_Manager_Reset_SM ();
     COMM_Manager_WaitToStart_SM (0);    //starts inmediately
 
@@ -358,27 +365,9 @@ int main(void)
         }
 
         // pulse indication led its on absolute value
-        if (HARD_GetPulsesValue(0))
-            Led_Pulse1_On();
-        else
-            Led_Pulse1_Off();
-
-        if (HARD_GetPulsesValue(1))
-            Led_Pulse2_On();
-        else
-            Led_Pulse2_Off();
-
-        if (HARD_GetPulsesValue(2))
-            Led_Pulse3_On();
-        else
-            Led_Pulse3_Off();
-
-        if (HARD_GetPulsesValue(3))
-            Led_Pulse4_On();
-        else
-            Led_Pulse4_Off();
-        
-        
+        // LedChannelShowPulses ();
+        // for 5s in between 20s show line ch state
+        LedChannelShowStates();
 
     }    //end of while 1
 
@@ -386,6 +375,142 @@ int main(void)
 }
 
 //--- End of Main ---//
+
+#define LED_GLOBAL_RUNNING    0
+#define LED_GLOBAL_CHANGE_ON_ERROR    1
+#define LED_GLOBAL_CHANGE_TO_PULSES    2
+
+#define LED_SHOW_PULSES    0
+#define LED_SHOW_LINE_ERRORS    1
+unsigned char led_show_error = LED_SHOW_PULSES;
+void LedChannelShowStates (void)
+{
+    unsigned char global_state = LED_GLOBAL_RUNNING;
+    
+    switch (led_show_error)
+    {
+    case LED_SHOW_PULSES:
+        if (!timer_led_show_error)
+        {
+            global_state = LED_GLOBAL_CHANGE_ON_ERROR;
+            timer_led_show_error = 7000;    // one second more than show error routine
+            led_show_error = LED_SHOW_LINE_ERRORS;
+        }
+        
+        LedChannelShowInnerStates(CH1_OFFSET, global_state);
+        LedChannelShowInnerStates(CH2_OFFSET, global_state);
+        LedChannelShowInnerStates(CH3_OFFSET, global_state);
+        LedChannelShowInnerStates(CH4_OFFSET, global_state);
+
+        if (global_state == LED_GLOBAL_CHANGE_ON_ERROR)
+        {
+            LF_Leds_Pulse_Toggle_Activate();
+            global_state = LED_GLOBAL_RUNNING;
+        }
+        break;
+
+    case LED_SHOW_LINE_ERRORS:
+
+        if (!timer_led_show_error)
+        {
+            global_state = LED_GLOBAL_CHANGE_TO_PULSES;
+            timer_led_show_error = 13000;    // total 20 secs
+            led_show_error = LED_SHOW_PULSES;
+        }
+        
+        LedChannelShowInnerStates(CH1_OFFSET, global_state);
+        LedChannelShowInnerStates(CH2_OFFSET, global_state);
+        LedChannelShowInnerStates(CH3_OFFSET, global_state);
+        LedChannelShowInnerStates(CH4_OFFSET, global_state);
+
+        if (global_state == LED_GLOBAL_CHANGE_TO_PULSES)
+            global_state = LED_GLOBAL_RUNNING;
+        
+        break;
+
+    default:
+        led_show_error = LED_SHOW_PULSES;
+        break;
+        
+    }
+}
+
+
+unsigned char led_ch_inner_state [4] = { 0 };
+void LedChannelShowInnerStates (unsigned char ch, unsigned char global_state)
+{
+    unsigned char * inner_state;
+
+    inner_state = &led_ch_inner_state[ch];
+    
+    switch (*inner_state)
+    {
+    case LED_SHOW_PULSES:
+        if (HARD_GetPulsesValue(ch))
+            Led_Pulse_On(ch);
+        else
+            Led_Pulse_Off(ch);
+
+        if (global_state == LED_GLOBAL_CHANGE_ON_ERROR)            
+        {
+            if (ADC_LineErrors(ch))
+            {
+                Led_Pulse_Off(ch);
+                LF_Leds_Pulse_Toggle_Set((1 << ch));
+                *inner_state = LED_SHOW_LINE_ERRORS;
+            }
+            else
+                LF_Leds_Pulse_Toggle_Reset((1 << ch));
+        }
+        break;
+
+    case LED_SHOW_LINE_ERRORS:
+        // do nothing here, just wait go back to pulses
+        if (global_state == LED_GLOBAL_CHANGE_TO_PULSES)            
+            *inner_state = LED_SHOW_PULSES;
+            
+        break;
+
+    default:
+        *inner_state = LED_SHOW_PULSES;
+        break;
+        
+    }
+}
+
+
+unsigned char ADC_LineErrors (unsigned char ch)
+{
+    // return errors on ch1 and ch2
+    if ((ch == CH1_OFFSET) || (ch == CH2_OFFSET))
+        return 1;
+
+    return 0;
+}
+
+
+void LedChannelShowPulses (void)
+{
+    if (HARD_GetPulsesValue(CH1_OFFSET))
+        Led_Pulse_On(CH1_OFFSET);
+    else
+        Led_Pulse_Off(CH1_OFFSET);
+
+    if (HARD_GetPulsesValue(CH2_OFFSET))
+        Led_Pulse_On(CH2_OFFSET);
+    else
+        Led_Pulse_Off(CH2_OFFSET);
+
+    if (HARD_GetPulsesValue(CH3_OFFSET))
+        Led_Pulse_On(CH3_OFFSET);
+    else
+        Led_Pulse_Off(CH3_OFFSET);
+
+    if (HARD_GetPulsesValue(CH4_OFFSET))
+        Led_Pulse_On(CH4_OFFSET);
+    else
+        Led_Pulse_Off(CH4_OFFSET);
+}
 
 
 void TimingDelay_Decrement(void)
@@ -398,6 +523,9 @@ void TimingDelay_Decrement(void)
 
     if (timer_concurrent)
         timer_concurrent--;
+
+    if (timer_led_show_error)
+        timer_led_show_error--;
     
 }
 

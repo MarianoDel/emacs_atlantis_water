@@ -51,6 +51,34 @@ unsigned char Led_Link_Is_On (void)
 }
 
 
+void Led_Pulse_On (unsigned char ch)
+{
+    if (ch == 0)
+        LED_PULSE1_ON;
+    else if (ch == 1)
+        LED_PULSE2_ON;
+    else if (ch == 2)
+        LED_PULSE3_ON;
+    else if (ch == 3)
+        LED_PULSE4_ON;
+    
+}
+
+
+void Led_Pulse_Off (unsigned char ch)
+{
+    if (ch == 0)
+        LED_PULSE1_OFF;
+    else if (ch == 1)
+        LED_PULSE2_OFF;
+    else if (ch == 2)
+        LED_PULSE3_OFF;
+    else if (ch == 3)
+        LED_PULSE4_OFF;
+
+}
+
+
 void Led_Pulse1_On (void)
 {
     LED_PULSE1_ON;

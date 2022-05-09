@@ -106,6 +106,9 @@ void Led_Link_On (void);
 void Led_Link_Off (void);
 unsigned char Led_Link_Is_On (void);
 
+void Led_Pulse_On (unsigned char ch);
+void Led_Pulse_Off (unsigned char ch);
+    
 void Led_Pulse1_On (void);
 void Led_Pulse1_Off (void);
 unsigned char Led_Pulse1_Is_On (void);
