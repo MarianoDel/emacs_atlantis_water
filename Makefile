@@ -73,7 +73,7 @@ SRC += $(BOOTDIR)/syscalls/syscalls.c
 
 SRC += ./src/adc.c
 SRC += ./src/dma.c
-# SRC += ./src/dsp.c
+SRC += ./src/dsp.c
 SRC += ./src/gpio.c
 SRC += ./src/it.c
 SRC += ./src/tim.c

@@ -74,7 +74,9 @@ void LedChannelShowStates (void);
 void LedChannelShowInnerStates (unsigned char ch, unsigned char global_state);
 void LedChannelShowPulses (void);
 
-unsigned char ADC_LineErrors (unsigned char);
+void ADC_Filters (void);
+void ADC_FiltersReset (void);
+unsigned char ADC_LineErrors (unsigned char ch);
 
 
 // Module Functions ------------------------------------------------------------
@@ -128,6 +130,8 @@ int main(void)
 
     COMM_Manager_Reset_SM ();
     COMM_Manager_WaitToStart_SM (0);    //starts inmediately
+
+    ADC_FiltersReset();
 
     while (1)
     {
@@ -348,6 +352,7 @@ int main(void)
             HARD_Timeouts();
             COMM_Timeouts();
             LF_Timeouts();
+            ADC_Filters();
         }
 
         HARD_UpdatePulsesFilters();
@@ -479,10 +484,44 @@ void LedChannelShowInnerStates (unsigned char ch, unsigned char global_state)
 }
 
 
+ma16_u16_data_obj_t ch1_adc_filter;
+ma16_u16_data_obj_t ch2_adc_filter;
+ma16_u16_data_obj_t ch3_adc_filter;
+ma16_u16_data_obj_t ch4_adc_filter;
+unsigned char adc_filters_cntr = 0;
+unsigned short ch_filtered [4] = { 0 };
+void ADC_FiltersReset (void)
+{
+    for (int i = 0; i < 4; i++)
+        ch_filtered[i] = 0;
+
+    MA16_U16Circular_Reset (&ch1_adc_filter);
+    MA16_U16Circular_Reset (&ch2_adc_filter);
+    MA16_U16Circular_Reset (&ch3_adc_filter);
+    MA16_U16Circular_Reset (&ch4_adc_filter);
+}
+
+
+void ADC_Filters (void)
+{
+    if (adc_filters_cntr)
+        adc_filters_cntr--;
+    else
+    {
+        adc_filters_cntr = 10;    //filter each 10ms
+        ch_filtered[0] = MA16_U16Circular (&ch1_adc_filter, Adc_Pulse1);
+        ch_filtered[1] = MA16_U16Circular (&ch2_adc_filter, Adc_Pulse2);
+        ch_filtered[2] = MA16_U16Circular (&ch3_adc_filter, Adc_Pulse3);
+        ch_filtered[3] = MA16_U16Circular (&ch4_adc_filter, Adc_Pulse4);
+    }
+}
+
+
+// answers 1 on error, 0 otherwise
 unsigned char ADC_LineErrors (unsigned char ch)
 {
-    // return errors on ch1 and ch2
-    if ((ch == CH1_OFFSET) || (ch == CH2_OFFSET))
+    if ((ch_filtered[ch] > 600) &&
+        (ch_filtered[ch] < 3400))
         return 1;
 
     return 0;

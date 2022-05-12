@@ -12,8 +12,8 @@
 // Defines for Module Configuration --------------------------------------------
 // #define USE_PID_CONTROLLERS
 // #define USE_MA32_U8_CIRCULAR
-// #define USE_MA16_U16_CIRCULAR
-#define USE_MA32_U16_CIRCULAR
+#define USE_MA16_U16_CIRCULAR
+// #define USE_MA32_U16_CIRCULAR
 
 
 // Module Exported Types Constants & Macros ------------------------------------

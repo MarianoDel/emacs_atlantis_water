@@ -14,8 +14,10 @@
 
 // Module Private Types Constants and Macros -----------------------------------
 #define CHECK_PULSE_TIMER    1
-#define PULSES_COUNTER_ROOF    100
-#define PULSES_COUNTER_THRESHOLD    30
+#define PULSES_COUNTER_ROOF    200
+#define PULSES_COUNTER_THRESHOLD    100
+// #define PULSES_COUNTER_ROOF    100
+// #define PULSES_COUNTER_THRESHOLD    30
 
 
 

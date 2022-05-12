@@ -131,7 +131,6 @@ unsigned short HARD_GetPulses (unsigned char channel);
 void HARD_SetPulses (unsigned char channel, unsigned short value);
 void HARD_Timeouts (void);
 
-
 #endif    /* _HARD_H_ */
 
 //--- end of file ---//
