@@ -95,10 +95,10 @@ int main(void)
 
     // Hardware Inits. ---------------------------
     // Init ADC and DMA
-    // AdcConfig();
-    // DMAConfig();
-    // DMA1_Channel1->CCR |= DMA_CCR_EN;
-    // ADC1->CR |= ADC_CR_ADSTART;
+    AdcConfig();
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+    ADC1->CR |= ADC_CR_ADSTART;
 
     // Init Usart1
     Usart1Config ();
