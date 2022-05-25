@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<link rel="stylesheet" href="css/estilos.css">
+	<link rel="stylesheet" href="css/styles.css">
+	<link rel="shortcut icon" type="image/x-icon" href="favicon2.ico">
+	<title>Atlantis Electronics | CPanel</title>
+</head>
+<body>
+	<header>
+		<img src="img/logo2.png" alt="Atlantis Electronics Logo">
+	</header>
+	<div id="cpanel_container">
+		<div class="wrap_botones_cpanel">
+			<button class="botones_cpanel" onclick="myFunctionBoton1()">Meter Power Cycle</button>
+			<button class="botones_cpanel" onclick="myFunctionBoton2()">Server Power Cycle</button>
+			<button class="botones_cpanel" onclick="myFunctionBoton3()">Remote Access Enable</button>
+			<button class="botones_cpanel" onclick="myFunctionBoton4()">Remote Access Blocked</button>
+		</div>
+		<div class="contenedor_listado_meters">
+			<div class="titulo-cpanel">
+				<span></span>
+				<p>METER LIST</p>
+				<span></span>
+			</div>
+			<ul>
+				<li><div><span class="meter-text">Meter #1:</span><span	class="listado">m1+m2</span></div><button class="update" data-id="1">UPDATE</button></li>
+				<li><div><span class="meter-text">Meter #2:</span><span	class="listado">m2</span></div><button class="update" data-id="2">UPDATE</button></li>
+				<li><div><span class="meter-text">Meter #3:</span><span	class="listado">m3-m4</span></div><button class="update" data-id="3">UPDATE</button></li>
+				<li><div><span class="meter-text">Meter #4:</span><span	class="listado">m4</span></div><button class="update" data-id="4">UPDATE</button></li>
+			</ul>
+		</div>
+		
+		<div id="myModal" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<form autocomplete="off" class="form-update">
+					<label for="meter" id="cambiar-text"></label>
+					<div class="rules">
+						<h2>Rules</h2>
+						<ul>
+							<li>Only the letter m is allowed</li>
+							<li>Only the number from 1 to 4 is allowed</li>
+							<li>Only plus (+) and minus (-) signs are allowed for mathematical calculations</li>
+						</ul>
+					</div>
+					<input type="text" name="meter" id="meter">
+					<span class="mensaje_error"></span>
+					<input type="button" value="UPDATE" class="cambiar">
+				</form>
+			</div>
+		</div>
+		<div class="new_user">
+			<div class="titulo-cpanel">
+				<span></span>
+				<p>ADD NEW USER</p>
+				<span></span>
+			</div>
+			<p class="already_register"></p>
+			<form action="xxxxxx.php" method="POST">
+				<div class="form-section">
+					<label for="username">Username*</label>
+					<input type="text" name="username" id="username" required>
+				</div>
+				<div class="form-section">
+					<label for="password">Password*</label>
+					<input type="password" name="password" id="password" required>
+					<span class="icon icon-eye-slash ojo"></span>
+				</div>
+				<input type="button" value="REGISTER">
+			</form>
+		</div>
+		<div class="wrap_table">
+			<div class="titulo-cpanel">
+				<span></span>
+				<p>REGISTERED USERS</p>
+				<span></span>
+			</div>
+			<p class="user_deleted"></p>
+			<table>
+				<thead>
+					<tr>
+						<th>USERNAME</th>
+						<th>ACTIONS</th>
+					</tr>
+				</thead>
+				<tbody id="usuarios_cpanel">
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<footer class="footer_meter">
+		<p><span>&#169;</span> 2022 - Atlantis Electronics Corp.</p>
+	</footer>
+	<script src="js/login.js"></script>
+	<script src="js/cpanel.js"></script>
+</body>
+</html>

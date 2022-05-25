@@ -1,7 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 from flask import Flask
-from flask import Flask, flash, redirect, render_template, request, session, abort, Response, url_for
+from flask import Flask, flash, redirect, render_template, request, session, abort, Response, url_for, send_from_directory
 from flask_socketio import SocketIO
 import json
 import pyaudio
@@ -39,25 +39,36 @@ def home():
         return redirect(url_for('do_admin_login'), code=302)
     else:
         # session['key0'] = request.args.get('session')
-        return render_template('registrado.html')
+        return render_template('meter.html')
 
-    
+@app.route('/index.html')
+def home_index():
+    return redirect(url_for('do_admin_login'), code=302)
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def do_admin_login():
     if request.method == 'GET':
-        return render_template('login.html')
+        return render_template('index.html')
 
     if request.method == 'POST':
-        if (request.form['psw'] == 'password' and request.form['uname'] == 'admin') or \
-           (request.form['psw'] == 'maxi' and request.form['uname'] == 'Maximiliano'):
-            session['username'] = request.form['uname']
+        if (request.form['password'] == 'password' and request.form['username'] == 'admin') or \
+           (request.form['password'] == 'maxi' and request.form['username'] == 'Maximiliano'):
+            session['username'] = request.form['username']
             session['logged_in'] = True
+            return redirect(url_for('home'), code=302)
         else:
-            flash('wrong password!')
-        return redirect(url_for('home'), code=302)
+            return redirect(url_for('no_login_page'), code=302)
 
 
+@app.route('/no-login')
+def no_login_page():
+    return render_template('no-login.html')
 
+@app.route('/favicon2.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'templates'),
+                               'favicon2.ico', mimetype='image/vnd.microsoft.icon')
 """ 
     Socket-IO
     The names message, json, connect and disconnect are reserved and cannot be used for named events

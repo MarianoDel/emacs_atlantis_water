@@ -1,4 +1,4 @@
-* Como migro lo que pasa Juan
+2* Como migro lo que pasa Juan
 
 ** primero copio toda la estructura de archivos a flask_login
    - como usa otros nombres, no piso nada 
