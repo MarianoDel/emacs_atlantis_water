@@ -104,10 +104,10 @@ button[type=submit]:hover {
 }
 
 #logo_kirno {
-	background-image: url(../img/Logo_Kirno.png);
-	/* img 160 * 95 factor .59375 */
-	width: 160px;
-	height: calc(160px * .59375);
+	background-image: url(../img/logo_kirno.png);
+	/* img 160 * 103 factor .64375 */
+	width: 110px;
+	height: calc(110px * .64375);
 	background-size: cover;
 }
 

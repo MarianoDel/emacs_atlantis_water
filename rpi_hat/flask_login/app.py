@@ -12,9 +12,19 @@ import threading
 import numpy as np
 
 ### GLOBALS FOR CONFIGURATION #########
+from get_distroname import GetDistroName
+
 ## OS where its run
-RUNNING_ON_SLACKWARE = 1
-RUNNING_ON_RASP = 0
+distname = GetDistroName()
+if distname == 'debian':
+    RUNNING_ON_SLACKWARE = 0
+    RUNNING_ON_RASP = 1
+elif distname == 'Slackware ':
+    RUNNING_ON_SLACKWARE = 1
+    RUNNING_ON_RASP = 0
+else:
+    print('No distro finded!')
+    exit(-1)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
@@ -33,12 +43,60 @@ if RUNNING_ON_RASP:
     Channel_to_Memory('12')
 
 
+pulses_total = [10000, 20000, 30000, 40000]
+pulses_d30 = [1000, 2000, 3000, 4000]
+pulses_d7 = [100, 200, 300, 400]
+pulses_d1 = [10, 20, 30, 40]
+pulses_h1 = [1, 2, 3, 4]
+
+def getPulses (pulses_conf):
+    m1 = 0
+    m2 = 0
+    m3 = 0
+    m4 = 0
+    
+    if button_last_conf == 'real':
+        m1 = pulses_total[0]
+        m2 = pulses_total[1]
+        m3 = pulses_total[2]
+        m4 = pulses_total[3]
+    elif button_last_conf == 'last_hour':
+        m1 = pulses_h1[0]
+        m2 = pulses_h1[1]
+        m3 = pulses_h1[2]
+        m4 = pulses_h1[3]
+    elif button_last_conf == 'last_day':
+        m1 = pulses_d1[0]
+        m2 = pulses_d1[1]
+        m3 = pulses_d1[2]
+        m4 = pulses_d1[3]
+    elif button_last_conf == 'last_week':
+        m1 = pulses_d7[0]
+        m2 = pulses_d7[1]
+        m3 = pulses_d7[2]
+        m4 = pulses_d7[3]
+    elif button_last_conf == 'last_month':
+        m1 = pulses_d30[0]
+        m2 = pulses_d30[1]
+        m3 = pulses_d30[2]
+        m4 = pulses_d30[3]
+
+    return (m1, m2, m3, m4)
+
+        
+def sendAllMeters (to_sockets, button_sel='real'):
+    (m1, m2, m3, m4) = getPulses (button_sel)
+    to_sockets.emit('meter1', {'data': str(m1)})
+    to_sockets.emit('meter2', {'data': str(m2)})
+    to_sockets.emit('meter3', {'data': str(m3)})
+    to_sockets.emit('meter4', {'data': str(m4)})
+
+                    
 @app.route('/')
 def home():
     if not session.get('logged_in'):
         return redirect(url_for('do_admin_login'), code=302)
     else:
-        # session['key0'] = request.args.get('session')
         return render_template('meter.html')
 
 @app.route('/index.html')
@@ -53,7 +111,7 @@ def do_admin_login():
 
     if request.method == 'POST':
         if (request.form['password'] == 'password' and request.form['username'] == 'admin') or \
-           (request.form['password'] == 'maxi' and request.form['username'] == 'Maximiliano'):
+           (request.form['password'] == 'maxi' and request.form['username'] == 'maxi'):
             session['username'] = request.form['username']
             session['logged_in'] = True
             return redirect(url_for('home'), code=302)
@@ -74,20 +132,17 @@ def favicon():
     The names message, json, connect and disconnect are reserved and cannot be used for named events
 """
 
+button_last_conf = 'real'
+
 @socketio.on('connect')
 def test_connect():
-    print('Client Connected!')
-    dict_data = {"nombre" : session.get('username'), "comentario" : "ultimo", "status" : "1" }
-    json_data = '[' + json.dumps(dict_data) + ']'
-    print (json_data)
-    socketio.emit('tabla', json_data)
-
-    channel = '09'
-    if RUNNING_ON_RASP:
-        LedBlueToggleContinous('start')
-        channel = Memory_to_Channel()
-
-    socketio.emit('boton_canal', {'data': channel})
+    if session.get('username'):        
+        print('Client ' + str(session.get('username')) + ' Connected!')
+        socketio.emit('button_in', {'data': button_last_conf})
+        sendAllMeters(socketio, button_last_conf)
+    else:
+        print('Client not recognized')
+        socketio.emit('redirect', {'data': str(session.get('username'))})
         
 
 @socketio.on('disconnect')
@@ -100,26 +155,20 @@ def test_disconnect():
 
 @socketio.on('botones')
 def handle_message(message):
+    global button_last_conf
+    
     print('received message: ' + str(message))
 
-    # cambiar el canal aca
-    if message['data'] == '09' or \
-       message['data'] == '12' or \
-       message['data'] == '14' or \
-       message['data'] == '71' or \
-       message['data'] == '72' or \
-       message['data'] == '74' or \
-       message['data'] == '77' or \
-       message['data'] == '81':
+    # change type of meas here
+    if message['data'] == 'real' or \
+       message['data'] == 'last_hour' or \
+       message['data'] == 'last_day' or \
+       message['data'] == 'last_week' or \
+       message['data'] == 'last_month':
         
-        phrase = "change channel to " + str(message['data'])
-        dict_data = {"nombre" : session.get('username'), "comentario" : phrase, "status" : "1" }
-        json_data = '[' + json.dumps(dict_data) + ']'
-        print (json_data)
-        socketio.emit('tabla', json_data)
-
-        if RUNNING_ON_RASP:
-            Channel_to_Memory(message['data'])
+        button_last_conf = message['data']
+        socketio.emit('button_in', {'data': button_last_conf})
+        sendAllMeters(socketio, button_last_conf)
 
     
 @socketio.on('ptt')

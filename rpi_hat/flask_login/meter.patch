@@ -1,0 +1,17 @@
+--- templates/meter.html	2022-05-27 10:49:32.763183118 -0300
++++ meter.html	2022-05-27 10:53:18.635167875 -0300
+@@ -6,6 +6,7 @@
+ 	<link rel="stylesheet" href="static/css/estilos.css">
+ 	<link rel="shortcut icon" type="image/x-icon" href="favicon2.ico">
+ 	<title>Atlantis Electronics | Water Meters</title>
++        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+ </head>
+ <body>
+ 	<header>
+@@ -56,4 +57,4 @@
+ 	</footer>
+ 	<script src="static/js/meter_validation.js"></script>
+ </body>
+-</html>
+\ No newline at end of file
++</html>

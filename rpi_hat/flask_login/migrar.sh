@@ -27,7 +27,7 @@ fi
 
 echo "Unzipping file..."
 sleep 0.1
-unzip -ud Archive Archive.zip
+unzip -uo Archive.zip -d Archive
 
 ######################
 # Directory Checking #
@@ -155,4 +155,10 @@ echo "removing tmp and old files..."
 rm -rf templates/*.html_old
 sleep 0.1
 
+# patching the new files
+echo "patching new files files..."
+patch static/js/meter_validation.js < meter_validation.patch
+sleep 0.1
+patch templates/meter.html < meter.patch
+sleep 0.1
 echo "conversion ended!"
