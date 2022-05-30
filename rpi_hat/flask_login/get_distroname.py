@@ -12,3 +12,11 @@ def GetDistroName ():
         print ("OS distro: " + distname)
 
     return distname
+
+
+##############
+# Main Tests #
+##############
+if __name__ == "__main__":
+    GetDistroName()
+    

@@ -170,21 +170,6 @@ def handle_message(message):
         socketio.emit('button_in', {'data': button_last_conf})
         sendAllMeters(socketio, button_last_conf)
 
-    
-@socketio.on('ptt')
-def transmit(message):
-    if message['data'] == 'ON':
-        if RUNNING_ON_RASP:
-            PttOn()
-
-        print("Cuidado PTT->ON")
-
-    else:
-        if RUNNING_ON_RASP:
-            PttOff()
-
-        print("PTT->OFF")
-
 
 audio_data_rx = 0
 def send_custom(message):
