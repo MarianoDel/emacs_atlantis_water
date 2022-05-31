@@ -44,6 +44,8 @@ class MeterProcess:
         self.link_up_rx_timeout = 0
         self.tt = 0
 
+        self.measCallback = cb
+
         # start the hardware module, get the distro
         from get_distroname import GetDistroName
         distname = GetDistroName()
@@ -87,18 +89,16 @@ class MeterProcess:
 
         # init the loop process
         print("MeterProcess initialized")
-        while True:
-            self.CommsProcess(self.cb)
 
-
-    def CommsProcess(self, callback):
+        
+    def CommsProcess(self):
         # receiv 'ok' to a 'keepalive'
         if self.link_up:
             self.link_up = False
             self.link_up_rx_timeout = 50
             if self.link_up_led == False:
                 self.link_up_led = True
-                LedLinkOn()
+                self.LedLinkOn()
 
         # answer 'ok' to a keepalive asking
         if self.answer_ok:
@@ -110,7 +110,7 @@ class MeterProcess:
         if self.link_up_rx_timeout == 0:
             if self.link_up_led:
                 self.link_up_led = False
-                LedLinkOff()
+                self.LedLinkOff()
                 # with link down reset the seq number
                 self.last_sequence = 0
 
@@ -119,8 +119,9 @@ class MeterProcess:
             self.link_up_tx_timeout = 15
 
         if self.last_meas_channel != self.meas_channel:
-            callback(self.meas_channel)
-            self.last_meas_channel = self.meas_channel
+            self.measCallback(self.meas_channel)
+            for i in range(len(self.meas_channel)):
+                self.last_meas_channel[i] = self.meas_channel[i]
 
         time.sleep(0.001)
 
@@ -155,7 +156,6 @@ class MeterProcess:
         if len(data_rx) > 0:
             if data_rx.startswith("keepalive"):
                 self.answer_ok = True
-                # self.link_up = True
                 self.keeps += 1
 
             elif data_rx.startswith("s"):
@@ -243,6 +243,13 @@ class MeterProcess:
         pkt.channel = channel
         return 1
 
+    
+    ###########
+    # Statics #
+    ###########
+    def Statics_Info (self):
+        return (self.keeps, self.okeys, self.noks, self.bad_pckt)
+    
 
     ###############
     # Timer Utils #
@@ -261,73 +268,78 @@ class MeterProcess:
 
 
 
-###################
-# Tests Functions #
-###################
-
-
-def display_title_bar (port_state=False, link_up=False):
-    # global meas_channel
-    # global keeps
-    # global okeys
-    # global noks
-    # global bad_pckt
-
-    # Clears the terminal screen, and displays a title bar.
-    os.system('clear')
-    if port_state:
-        port_state = "Open"
-    else:
-        port_state = "Close"
-
-    if link_up:
-        link_up = "Up"
-    else:
-        link_up = "Down"
-
-    total = keeps + okeys + bad_pckt + noks
-    error = bad_pckt + noks
-    perc = 0
-
-    if total != 0:
-        perc = error / total * 100
-
-    current_time = time.time()
-    elapsed_time = current_time - init_time
-    pps = total / elapsed_time
-
-
-    # print("\t**********************************************")
-    # print("\t***    KIRNO - Atlantis Pulses Test -      ***")
-    # print("\t**********************************************")
-    # print("\t* Port: {}  Link: {}  Elapsed: {:.2f}\t *".format(port_state, link_up, elapsed_time))
-    # print("\t**********************************************")
-    # print(f'\t* keeps: {keeps} ok: {okeys} nok: {noks} bad_pckt: {bad_pckt}')
-    # print(f'\t* rate: {perc:02.02f}%')
-    # print(f'\t* packet per second: {pps:.02f}')
-    # print("\t**********************************************")
-    # print(f'\t*get  ch1: {meas_channel[1]}\tch2: {meas_channel[2]}\tch3: {meas_channel[3]}\tch4: {meas_channel[4]}\t     *')
-    # print("\t**********************************************")
-    # print(f'\t*sent ch1: {gen_channel[1]}\tch2: {gen_channel[2]}\tch3: {gen_channel[3]}\tch4: {gen_channel[4]}\t *')
-    # print("\t**********************************************")
-    # print(f'\t*seq waited: {last_sequence}\tseq getted: {last_getted}')
-    # print("\t**********************************************")
-    # print("")
-
-
-
+#####################
+# Testing Functions #
+#####################
+my_proc = None
 def TestObjects ():
+    global my_proc
+    
     print("Creating objects...")
 
     my_packet = Packet_Info()
     my_statics = Statics_Info()
-    my_proc = MeterProcess(myCallback)
 
+    mtt = threading.Timer(interval=2, function=myTestTimeout)
+    mtt.start()
+
+    my_proc = MeterProcess(myCallback)
     print("Objects created")
 
+    while True:
+        my_proc.CommsProcess()
 
+    
 def myCallback (data):
-    print ("callback called: " + data)
+    print ("  callback called: " + str(data))
+    (k, o, n, b) = my_proc.Statics_Info()
+    print (f'  statics keeps {k} okeys {o} noks {n} bads {b}')
+
+
+myseq = 0
+mytest_state = 'init'
+def myTestTimeout ():
+    global my_proc
+    global mytest_state
+    global myseq
+
+    # send data to serial_mock and recall
+    if mytest_state == 'init':
+        my_proc.MySerialCallback('keepalive')
+        mytest_state = 'send_p1'
+        
+    elif mytest_state == 'send_p1':
+        seq_msg = 's{0:03d}'.format(myseq)
+        pulses = 1
+        pulses_msg = '{0:03d}'.format(pulses)
+        message = seq_msg + ' pulses ' + pulses_msg + ' ch1'
+        my_proc.MySerialCallback(message)
+        if myseq < 999:
+            myseq += 1
+        else:
+            myseq = 1
+            
+        mytest_state = 'send_p2'
+        
+    elif mytest_state == 'send_p2':
+        seq_msg = 's{0:03d}'.format(myseq)
+        pulses = 1
+        pulses_msg = '{0:03d}'.format(pulses)
+        message = seq_msg + ' pulses ' + pulses_msg + ' ch2'
+        my_proc.MySerialCallback(message)
+        if myseq < 999:
+            myseq += 1
+        else:
+            myseq = 1
+
+        mytest_state = 'init'
+        
+    else:
+        mytest_state = 'init'
+        
+        
+    mtt = threading.Timer(interval=0.5, function=myTestTimeout)
+    mtt.start()
 
     
 ##############
