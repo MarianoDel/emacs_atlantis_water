@@ -38,7 +38,6 @@ class MeterProcess:
         self.last_sequence = -1
         self.last_getted = -1
         self.meas_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
-        self.last_meas_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
 
         self.link_up_tx_timeout = 0
         self.link_up_rx_timeout = 0
@@ -118,10 +117,10 @@ class MeterProcess:
             self.transmission('keepalive\n')
             self.link_up_tx_timeout = 15
 
-        if self.last_meas_channel != self.meas_channel:
+        if self.meas_channel != [0, 0, 0, 0, 0]:
             self.measCallback(self.meas_channel)
             for i in range(len(self.meas_channel)):
-                self.last_meas_channel[i] = self.meas_channel[i]
+                self.meas_channel[i] = 0
 
         time.sleep(0.001)
 
