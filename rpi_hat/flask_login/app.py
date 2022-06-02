@@ -4,7 +4,6 @@ from flask import Flask
 from flask import Flask, flash, redirect, render_template, request, session, abort, Response, url_for, send_from_directory
 from flask_socketio import SocketIO
 import json
-import pyaudio
 import os
 from blinker import Namespace
 
@@ -12,6 +11,7 @@ import threading
 
 ### GLOBALS FOR CONFIGURATION #########
 from get_distroname import GetDistroName
+from flash_data import ReadConfigFile, WriteConfigFile, hourUpdate, getMeterTotals, getMeterHours, getMeterWeeks, getMeterMonths
 
 
 ## OS where its run
@@ -33,66 +33,82 @@ socketio = SocketIO(app)
 
 my_signal = Namespace()
 meas_signal = my_signal.signal('meas_signal')
+my_update_signal = Namespace()
+one_hour_signal = my_update_signal.signal('one_hour_signal')
 
-
-pulses_total = [10000, 20000, 30000, 40000]
-pulses_d30 = [1000, 2000, 3000, 4000]
-pulses_d7 = [100, 200, 300, 400]
-pulses_d1 = [10, 20, 30, 40]
-pulses_h1 = [1, 2, 3, 4]
+pulses_current_hour = [ 0, 0, 0, 0]
 
 def getPulses (pulses_conf):
+    global pulses_current_hour
+    
     m1 = 0
     m2 = 0
     m3 = 0
     m4 = 0
     
     if button_last_conf == 'real':
-        m1 = pulses_total[0]
-        m2 = pulses_total[1]
-        m3 = pulses_total[2]
-        m4 = pulses_total[3]
+        pulses_total = getMeterTotals()
+        m1 = pulses_total[0] + pulses_current_hour[0]
+        m2 = pulses_total[1] + pulses_current_hour[1]        
+        m3 = pulses_total[2] + pulses_current_hour[2]
+        m4 = pulses_total[3] + pulses_current_hour[3]
     elif button_last_conf == 'last_hour':
-        m1 = pulses_h1[0]
-        m2 = pulses_h1[1]
-        m3 = pulses_h1[2]
-        m4 = pulses_h1[3]
+        m1 = pulses_current_hour[0]
+        m2 = pulses_current_hour[1]
+        m3 = pulses_current_hour[2]
+        m4 = pulses_current_hour[3]
     elif button_last_conf == 'last_day':
-        m1 = pulses_d1[0]
-        m2 = pulses_d1[1]
-        m3 = pulses_d1[2]
-        m4 = pulses_d1[3]
+        (last_day_m1, last_day_m2, last_day_m3, last_day_m4) = getMeterHours()
+        m1 = sum(last_day_m1) + pulses_current_hour[0]
+        m2 = sum(last_day_m2) + pulses_current_hour[1]
+        m3 = sum(last_day_m3) + pulses_current_hour[2]
+        m4 = sum(last_day_m4) + pulses_current_hour[3]
     elif button_last_conf == 'last_week':
-        m1 = pulses_d7[0]
-        m2 = pulses_d7[1]
-        m3 = pulses_d7[2]
-        m4 = pulses_d7[3]
+        (last_day_m1, last_day_m2, last_day_m3, last_day_m4) = getMeterHours()
+        (last_week_m1, last_week_m2, last_week_m3, last_week_m4) = getMeterWeeks()
+        m1 = sum(last_day_m1) + sum(last_week_m1) + pulses_current_hour[0]
+        m2 = sum(last_day_m2) + sum(last_week_m1) + pulses_current_hour[1]
+        m3 = sum(last_day_m3) + sum(last_week_m1) + pulses_current_hour[2]
+        m4 = sum(last_day_m4) + sum(last_week_m1) + pulses_current_hour[3]
     elif button_last_conf == 'last_month':
-        m1 = pulses_d30[0]
-        m2 = pulses_d30[1]
-        m3 = pulses_d30[2]
-        m4 = pulses_d30[3]
+        (last_day_m1, last_day_m2, last_day_m3, last_day_m4) = getMeterHours()
+        (last_week_m1, last_week_m2, last_week_m3, last_week_m4) = getMeterWeeks()
+        (last_month_m1, last_month_m2, last_month_m3, last_month_m4) = getMeterMonths()        
+        m1 = sum(last_day_m1) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[0]
+        m2 = sum(last_day_m2) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[1]
+        m3 = sum(last_day_m3) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[2]
+        m4 = sum(last_day_m4) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[3]
 
     return (m1, m2, m3, m4)
 
 
 def setPulses (cntrs_list):
-    pulses_total[0] += cntrs_list[1]
-    pulses_total[1] += cntrs_list[2]
-    pulses_total[2] += cntrs_list[3]
-    pulses_total[3] += cntrs_list[4]
+    global pulses_current_hour
+    global button_last_conf
+
+    m1 = 0
+    m2 = 0
+    m3 = 0
+    m4 = 0
+    
+    pulses_current_hour[0] += cntrs_list[1]
+    pulses_current_hour[1] += cntrs_list[2]
+    pulses_current_hour[2] += cntrs_list[3]
+    pulses_current_hour[3] += cntrs_list[4]
+
+    (m1, m2, m3, m4) = getPulses(button_last_conf)
 
     if cntrs_list[1]:
-        socketio.emit('meter1', {'data': str(pulses_total[0])})
+        socketio.emit('meter1', {'data': str(m1)})
 
     if cntrs_list[2]:
-        socketio.emit('meter2', {'data': str(pulses_total[1])})
+        socketio.emit('meter2', {'data': str(m2)})
 
     if cntrs_list[3]:
-        socketio.emit('meter3', {'data': str(pulses_total[2])})
+        socketio.emit('meter3', {'data': str(m3)})
 
     if cntrs_list[4]:
-        socketio.emit('meter4', {'data': str(pulses_total[3])})
+        socketio.emit('meter4', {'data': str(m4)})
         
 
         
@@ -183,11 +199,26 @@ def handle_message(message):
         sendAllMeters(socketio, button_last_conf)
 
 
+
 ###########
 # Signals #
 ###########
 meas_signal.connect(setPulses)
+one_hour_signal.connect(hourUpdate)
 
+    
+#########################
+# One Hour Update Timer #
+#########################
+def one_hour_timer_handler ():
+    one_hour_signal.send()
+    one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+    one_hour_timer.start()
+
+one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+one_hour_timer.start()
+
+    
 
 ######################
 # Background Process #

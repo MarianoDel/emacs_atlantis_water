@@ -1,0 +1,9 @@
+* Lo que falta para terminar con instalacion minima
+** levantar bkp al inicio
+** quitar la funcion de pruebas de pulsos en app.py
+** poner todo el sistema en rasp
+** probar hard local
+** activar led server
+** toggle en led server con conexion
+** duckdns
+** arranque automatico
