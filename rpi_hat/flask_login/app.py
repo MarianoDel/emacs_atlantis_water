@@ -5,7 +5,8 @@ from flask import Flask, flash, redirect, render_template, request, session, abo
 from flask_socketio import SocketIO
 import json
 import os
-from blinker import Namespace
+# from blinker import Namespace
+from blinker import signal
 
 import threading
 
@@ -31,10 +32,12 @@ app = Flask(__name__)
 app.secret_key = os.urandom(12)
 socketio = SocketIO(app)
 
-my_signal = Namespace()
-meas_signal = my_signal.signal('meas_signal')
-my_update_signal = Namespace()
-one_hour_signal = my_update_signal.signal('one_hour_signal')
+# my_signal = Namespace()
+# meas_signal = my_signal.signal('meas_signal')
+# my_update_signal = Namespace()
+# one_hour_signal = my_update_signal.signal('one_hour_signal')
+meas_signal = signal('meas_signal')
+one_hour_signal = signal('one_hour_signal')
 
 pulses_current_hour = [ 0, 0, 0, 0]
 
@@ -204,21 +207,35 @@ def handle_message(message):
 # Signals #
 ###########
 meas_signal.connect(setPulses)
-one_hour_signal.connect(hourUpdate)
+# one_hour_signal.connect(one_hour_timer_process)
 
     
 #########################
 # One Hour Update Timer #
 #########################
 def one_hour_timer_handler ():
-    one_hour_signal.send()
+    print("  one hour pass") 
+    one_hour_signal.send()    
     one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+    # one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)    
     one_hour_timer.start()
 
 one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+# one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)
 one_hour_timer.start()
 
-    
+def one_hour_timer_process (mymy):
+    global pulses_current_hour
+
+    print("  one hour signal process")
+    hourUpdate(pulses_current_hour)
+
+    pulses_current_hour[0] = 0
+    pulses_current_hour[1] = 0
+    pulses_current_hour[2] = 0
+    pulses_current_hour[3] = 0
+
+one_hour_signal.connect(one_hour_timer_process)
 
 ######################
 # Background Process #

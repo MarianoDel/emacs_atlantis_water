@@ -186,11 +186,6 @@ def hourUpdate (pulses_last_hour_list):
     pulses_hour_list_m3[hour_cntr] = pulses_last_hour_list[2]
     pulses_hour_list_m4[hour_cntr] = pulses_last_hour_list[3]
 
-    pulses_last_hour_list[0] = 0
-    pulses_last_hour_list[1] = 0
-    pulses_last_hour_list[2] = 0
-    pulses_last_hour_list[3] = 0
-    
     if hour_cntr < 23:
         hour_cntr += 1
     else:
@@ -218,9 +213,6 @@ def hourUpdate (pulses_last_hour_list):
 
     # write backup after the update
     WriteConfigFile()
-
-    return pulses_last_hour_list
-
 
 
 def getMeterTotals():
