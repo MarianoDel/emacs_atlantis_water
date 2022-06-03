@@ -11,3 +11,19 @@
 * A futuro
 ** cpanel
 ** mejores logins
+
+* Instalacion en Rpi
+** flask
+   sudo pip3 install flask
+
+** flask-io
+   sudo pip3 install flask-io
+
+** eventlet
+   sudo pip3 install eventlet
+
+** flask-socketio
+   sudo pip3 install flask-socketio
+
+** blinker
+   sudo pip3 install blinker

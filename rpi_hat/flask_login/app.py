@@ -70,17 +70,16 @@ def getPulses (pulses_conf):
         (last_day_m1, last_day_m2, last_day_m3, last_day_m4) = getMeterHours()
         (last_week_m1, last_week_m2, last_week_m3, last_week_m4) = getMeterWeeks()
         m1 = sum(last_day_m1) + sum(last_week_m1) + pulses_current_hour[0]
-        m2 = sum(last_day_m2) + sum(last_week_m1) + pulses_current_hour[1]
-        m3 = sum(last_day_m3) + sum(last_week_m1) + pulses_current_hour[2]
-        m4 = sum(last_day_m4) + sum(last_week_m1) + pulses_current_hour[3]
+        m2 = sum(last_day_m2) + sum(last_week_m2) + pulses_current_hour[1]
+        m3 = sum(last_day_m3) + sum(last_week_m3) + pulses_current_hour[2]
+        m4 = sum(last_day_m4) + sum(last_week_m4) + pulses_current_hour[3]
     elif button_last_conf == 'last_month':
         (last_day_m1, last_day_m2, last_day_m3, last_day_m4) = getMeterHours()
-        (last_week_m1, last_week_m2, last_week_m3, last_week_m4) = getMeterWeeks()
         (last_month_m1, last_month_m2, last_month_m3, last_month_m4) = getMeterMonths()        
-        m1 = sum(last_day_m1) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[0]
-        m2 = sum(last_day_m2) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[1]
-        m3 = sum(last_day_m3) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[2]
-        m4 = sum(last_day_m4) + sum(last_week_m1) + sum(last_month_m1) + pulses_current_hour[3]
+        m1 = sum(last_day_m1) + sum(last_month_m1) + pulses_current_hour[0]
+        m2 = sum(last_day_m2) + sum(last_month_m2) + pulses_current_hour[1]
+        m3 = sum(last_day_m3) + sum(last_month_m3) + pulses_current_hour[2]
+        m4 = sum(last_day_m4) + sum(last_month_m4) + pulses_current_hour[3]
 
     return (m1, m2, m3, m4)
 
@@ -216,15 +215,15 @@ meas_signal.connect(setPulses)
 def one_hour_timer_handler ():
     print("  one hour pass") 
     one_hour_signal.send()    
-    # one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
-    one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)    
+    one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+    # one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)    
     one_hour_timer.start()
 
 ReadConfigFile()    # start with saved values
 # ReadConfigFile(True)    # start with empty values
 uptime = 0
-# one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
-one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)
+one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+# one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)
 one_hour_timer.start()
 
 def one_hour_timer_process (mymy):
