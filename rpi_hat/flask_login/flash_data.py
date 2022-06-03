@@ -2,64 +2,95 @@
 # use with python3
 import configparser
 
-def ReadConfigFile ():
+def ReadConfigFile (start_empty=False):
+    global pulses_total_list
+    global pulses_hour_list_m1
+    global pulses_hour_list_m2
+    global pulses_hour_list_m3
+    global pulses_hour_list_m4
+    global pulses_week_list_m1
+    global pulses_week_list_m2
+    global pulses_week_list_m3
+    global pulses_week_list_m4
+    global pulses_month_list_m1
+    global pulses_month_list_m2
+    global pulses_month_list_m3
+    global pulses_month_list_m4
+
+    if start_empty:
+        pulses_total_list = [0 for x in range(4)]
+        pulses_hour_list_m1 = [0 for x in range(24)]
+        pulses_hour_list_m2 = [0 for x in range(24)]
+        pulses_hour_list_m3 = [0 for x in range(24)]
+        pulses_hour_list_m4 = [0 for x in range(24)]
+        pulses_week_list_m1 = [0 for x in range(7)]
+        pulses_week_list_m2 = [0 for x in range(7)]
+        pulses_week_list_m3 = [0 for x in range(7)]
+        pulses_week_list_m4 = [0 for x in range(7)]
+        pulses_month_list_m1 = [0 for x in range(30)]
+        pulses_month_list_m2 = [0 for x in range(30)]
+        pulses_month_list_m3 = [0 for x in range(30)]
+        pulses_month_list_m4 = [0 for x in range(30)]
+        return
+        
+
     config = configparser.RawConfigParser()
     config.read('flash_data.txt')
     
     pulses_read = config.get('pulses', 'pulses_total')
-    saved_total = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_total)
+    pulses_total_list = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_total_list)
 
     
     pulses_read = config.get('pulses', 'pulses_hour_m1')
-    saved_hours_m1 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_hours_m1)
+    pulses_hour_list_m1 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_hour_list_m1)
 
     pulses_read = config.get('pulses', 'pulses_hour_m2')
-    saved_hours_m2 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_hours_m2)
+    pulses_hour_list_m2 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_hour_list_m2)
 
     pulses_read = config.get('pulses', 'pulses_hour_m3')
-    saved_hours_m3 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_hours_m3)
+    pulses_hour_list_m3 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_hour_list_m3)
 
     pulses_read = config.get('pulses', 'pulses_hour_m4')
-    saved_hours_m4 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_hours_m4)
+    pulses_hour_list_m4 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_hour_list_m4)
 
     
     pulses_read = config.get('pulses', 'pulses_week_m1')
-    saved_week_m1 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_week_m1)
+    pulses_week_list_m1 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_week_list_m1)
 
     pulses_read = config.get('pulses', 'pulses_week_m2')
-    saved_week_m2 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_week_m2)
+    pulses_week_list_m2 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_week_list_m2)
 
     pulses_read = config.get('pulses', 'pulses_week_m3')
-    saved_week_m3 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_week_m3)
+    pulses_week_list_m3 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_week_list_m3)
 
     pulses_read = config.get('pulses', 'pulses_week_m4')
-    saved_week_m4 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_week_m4)
+    pulses_week_list_m4 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_week_list_m4)
 
     
     pulses_read = config.get('pulses', 'pulses_month_m1')
-    saved_month_m1 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_month_m1)
+    pulses_month_list_m1 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_month_list_m1)
 
     pulses_read = config.get('pulses', 'pulses_month_m2')
-    saved_month_m2 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_month_m2)
+    pulses_month_list_m2 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_month_list_m2)
 
     pulses_read = config.get('pulses', 'pulses_month_m3')
-    saved_month_m3 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_month_m3)
+    pulses_month_list_m3 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_month_list_m3)
 
     pulses_read = config.get('pulses', 'pulses_month_m4')
-    saved_month_m4 = [int(x) for x in list(pulses_read.split(','))]
-    print(saved_month_m4)
+    pulses_month_list_m4 = [int(x) for x in list(pulses_read.split(','))]
+    print(pulses_month_list_m4)
     
         
         
@@ -141,19 +172,19 @@ def WriteConfigFile ():
         config.write(configfile)
 
 
-pulses_total_list = [0 for x in range(4)]
-pulses_hour_list_m1 = [0 for x in range(24)]
-pulses_hour_list_m2 = [0 for x in range(24)]
-pulses_hour_list_m3 = [0 for x in range(24)]
-pulses_hour_list_m4 = [0 for x in range(24)]
-pulses_week_list_m1 = [0 for x in range(7)]
-pulses_week_list_m2 = [0 for x in range(7)]
-pulses_week_list_m3 = [0 for x in range(7)]
-pulses_week_list_m4 = [0 for x in range(7)]
-pulses_month_list_m1 = [0 for x in range(30)]
-pulses_month_list_m2 = [0 for x in range(30)]
-pulses_month_list_m3 = [0 for x in range(30)]
-pulses_month_list_m4 = [0 for x in range(30)]
+# pulses_total_list = [0 for x in range(4)]
+# pulses_hour_list_m1 = [0 for x in range(24)]
+# pulses_hour_list_m2 = [0 for x in range(24)]
+# pulses_hour_list_m3 = [0 for x in range(24)]
+# pulses_hour_list_m4 = [0 for x in range(24)]
+# pulses_week_list_m1 = [0 for x in range(7)]
+# pulses_week_list_m2 = [0 for x in range(7)]
+# pulses_week_list_m3 = [0 for x in range(7)]
+# pulses_week_list_m4 = [0 for x in range(7)]
+# pulses_month_list_m1 = [0 for x in range(30)]
+# pulses_month_list_m2 = [0 for x in range(30)]
+# pulses_month_list_m3 = [0 for x in range(30)]
+# pulses_month_list_m4 = [0 for x in range(30)]
 hour_cntr = 0
 week_day_cntr = 0
 month_day_cntr = 0

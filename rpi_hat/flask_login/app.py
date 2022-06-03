@@ -216,18 +216,23 @@ meas_signal.connect(setPulses)
 def one_hour_timer_handler ():
     print("  one hour pass") 
     one_hour_signal.send()    
-    one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
-    # one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)    
+    # one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+    one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)    
     one_hour_timer.start()
 
-one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
-# one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)
+ReadConfigFile()    # start with saved values
+# ReadConfigFile(True)    # start with empty values
+uptime = 0
+# one_hour_timer = threading.Timer(interval=3600, function=one_hour_timer_handler)
+one_hour_timer = threading.Timer(interval=60, function=one_hour_timer_handler)
 one_hour_timer.start()
 
 def one_hour_timer_process (mymy):
     global pulses_current_hour
+    global uptime
 
-    print("  one hour signal process")
+    uptime += 1
+    print("  one hour signal process, uptime: " + str(uptime) + ' hours')
     hourUpdate(pulses_current_hour)
 
     pulses_current_hour[0] = 0
