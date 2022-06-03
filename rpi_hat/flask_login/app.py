@@ -20,9 +20,11 @@ distname = GetDistroName()
 if distname == 'debian':
     RUNNING_ON_SLACKWARE = 0
     RUNNING_ON_RASP = 1
+    SIMULATE_PULSES = False    
 elif distname == 'Slackware ':
     RUNNING_ON_SLACKWARE = 1
     RUNNING_ON_RASP = 0
+    SIMULATE_PULSES = True
 else:
     print('No distro finded!')
     exit(-1)
@@ -249,8 +251,9 @@ my_proc = None
 def bkg_process ():
     global my_proc
 
-    mtt = threading.Timer(interval=2, function=bkg_test)
-    mtt.start()
+    if SIMULATE_PULSES:
+        mtt = threading.Timer(interval=2, function=bkg_test)
+        mtt.start()
     
     my_proc = MeterProcess(bkg_new_meas)
     t1 = threading.Thread(target=bkg_handler)
@@ -271,7 +274,7 @@ def bkg_new_meas (meas_list):
 
 
 myseq = 0
-mytest_state = 'init'    
+mytest_state = 'init'
 def bkg_test ():
     global my_proc
     global mytest_state
