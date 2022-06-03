@@ -49,9 +49,18 @@ class MeterProcess:
         from get_distroname import GetDistroName
         distname = GetDistroName()
         if distname == 'debian':
-            from gpios import GpiosInit, LedLinkOff, SW_TxOn, SW_TxOff
+            from gpios import GpiosInit, LedLinkOn, LedLinkOff, SW_TxOn, SW_TxOff, \
+                LedLinkPulse
             from serialcomm import SerialComm
             GpiosInit()
+            SW_TxOn()
+            LedLinkOff()
+            
+            self.LedLinkOn = LedLinkOn
+            self.LedLinkOff = LedLinkOff            
+            self.SW_TxOn = SW_TxOn
+            self.SW_TxOff = SW_TxOff
+            self.LedLinkPulse = LedLinkPulse
             self.ser = SerialComm(self.MySerialCallback, '/dev/serial0',show_rx=False)
         elif distname == 'Slackware ':
             from gpios_mock import GpiosInit, LedLinkOn, LedLinkOff, SW_TxOn, SW_TxOff, \
