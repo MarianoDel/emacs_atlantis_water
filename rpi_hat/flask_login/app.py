@@ -5,10 +5,9 @@ from flask import Flask, flash, redirect, render_template, request, session, abo
 from flask_socketio import SocketIO
 import json
 import os
-# from blinker import Namespace
 from blinker import signal
-
 import threading
+
 
 ### GLOBALS FOR CONFIGURATION #########
 from get_distroname import GetDistroName
@@ -34,10 +33,6 @@ app = Flask(__name__)
 app.secret_key = os.urandom(12)
 socketio = SocketIO(app)
 
-# my_signal = Namespace()
-# meas_signal = my_signal.signal('meas_signal')
-# my_update_signal = Namespace()
-# one_hour_signal = my_update_signal.signal('one_hour_signal')
 meas_signal = signal('meas_signal')
 one_hour_signal = signal('one_hour_signal')
 
@@ -114,8 +109,7 @@ def setPulses (cntrs_list):
     if cntrs_list[4]:
         socketio.emit('meter4', {'data': str(m4)})
         
-
-        
+    
 def sendAllMeters (to_sockets, button_sel='real'):
     (m1, m2, m3, m4) = getPulses (button_sel)
     to_sockets.emit('meter1', {'data': str(m1)})
@@ -131,6 +125,7 @@ def home():
     else:
         return render_template('meter.html')
 
+    
 @app.route('/index.html')
 def home_index():
     return redirect(url_for('do_admin_login'), code=302)
@@ -155,6 +150,7 @@ def do_admin_login():
 def no_login_page():
     return render_template('no-login.html')
 
+
 @app.route('/favicon2.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'templates'),
@@ -172,6 +168,7 @@ def test_connect():
         print('Client ' + str(session.get('username')) + ' Connected!')
         socketio.emit('button_in', {'data': button_last_conf})
         sendAllMeters(socketio, button_last_conf)
+        LedConnect()
     else:
         print('Client not recognized')
         socketio.emit('redirect', {'data': str(session.get('username'))})
@@ -180,9 +177,7 @@ def test_connect():
 @socketio.on('disconnect')
 def test_disconnect():
     print('Client disconnected')
-    # audio_stop_stream()    #no encuentra el thread
-    if RUNNING_ON_RASP:
-        LedBlueToggleContinous('stop')
+    LedDisconnect()
 
 
 @socketio.on('botones')
@@ -319,7 +314,17 @@ def bkg_test ():
     mtt = threading.Timer(interval=4, function=bkg_test)
     mtt.start()
 
-    
+
+def LedDisconnect():
+    global my_proc
+
+    my_proc.LedServer('toggle off')
+
+def LedConnect():
+    global my_proc
+
+    my_proc.LedServer('toggle on')    
+
     
 ########
 # Main #

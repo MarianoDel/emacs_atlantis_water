@@ -50,31 +50,37 @@ class MeterProcess:
         distname = GetDistroName()
         if distname == 'debian':
             from gpios import GpiosInit, LedLinkOn, LedLinkOff, SW_TxOn, SW_TxOff, \
-                LedLinkPulse
+                LedLinkPulse, LedServerOn, LedServerOff, LedServerToggleContinous
             from serialcomm import SerialComm
             GpiosInit()
             SW_TxOn()
             LedLinkOff()
             
-            self.LedLinkOn = LedLinkOn
-            self.LedLinkOff = LedLinkOff            
             self.SW_TxOn = SW_TxOn
             self.SW_TxOff = SW_TxOff
+            self.LedLinkOn = LedLinkOn
+            self.LedLinkOff = LedLinkOff            
             self.LedLinkPulse = LedLinkPulse
+            self.LedServerOn = LedServerOn
+            self.LedServerOff = LedServerOff
+            self.LedServerToggleContinous = LedServerToggleContinous
             self.ser = SerialComm(self.MySerialCallback, '/dev/serial0',show_rx=False)
         elif distname == 'Slackware ':
             from gpios_mock import GpiosInit, LedLinkOn, LedLinkOff, SW_TxOn, SW_TxOff, \
-                LedLinkPulse
+                LedLinkPulse, LedServerOn, LedServerOff, LedServerToggleContinous
             from serialcomm_mock import SerialComm
             GpiosInit()
             SW_TxOn()
             LedLinkOff()
             
-            self.LedLinkOn = LedLinkOn
-            self.LedLinkOff = LedLinkOff            
             self.SW_TxOn = SW_TxOn
             self.SW_TxOff = SW_TxOff
+            self.LedLinkOn = LedLinkOn
+            self.LedLinkOff = LedLinkOff
             self.LedLinkPulse = LedLinkPulse
+            self.LedServerOn = LedServerOn
+            self.LedServerOff = LedServerOff
+            self.LedServerToggleContinous = LedServerToggleContinous            
             self.ser = SerialComm(self.MySerialCallback, '/dev/ttyACM0')
         else:
             print ("No distname find! Closing Testing")
@@ -259,6 +265,21 @@ class MeterProcess:
         return (self.keeps, self.okeys, self.noks, self.bad_pckt)
     
 
+    ##############
+    # Leds Utils #
+    ##############
+    def LedServer (self, status_str):
+        if status_str == 'on':
+            self.LedServerToggleContinous('stop')
+            self.LedServerOn()
+        elif status_str == 'off':
+            self.LedServerToggleContinous('stop')
+            self.LedServerOff()
+        elif status_str == 'toggle on':
+            self.LedServerToggleContinous('start')
+        elif status_str == 'toggle off':
+            self.LedServerToggleContinous('stop')
+            
     ###############
     # Timer Utils #
     ###############
