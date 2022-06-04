@@ -27,3 +27,22 @@
 
 ** blinker
    sudo pip3 install blinker
+
+** INCOMPATIBILIDAD EN FLASK SOCKET-IO
+*** bajar a versiones anteriores
+    sudo pip3 install --upgrade python-socketio==4.6.0
+
+    sudo pip3 install --upgrade python-engineio==3.13.2
+
+    sudo pip3 install --upgrade Flask-SocketIO==4.3.1
+
+*** ahora tengo problemas con el webserver
+    sudo pip3 install git+https://github.com/untitaker/werkzeug.git@reloader-perf
+
+*** con todos esos problemas volvi atras con versiones anteriores
+    flask-socketio-5.1.2 python-engineio-4.3.2 python-socketio-5.6.0
+    script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js">
+    This worked for me. This error is due to dependency related to python-engineio.
+    After this, check your socket request shows EIO4 like this 
+    "GET /socket.io/?EIO=4&transport=websocket&sid=mJ1g8wm0didssJSiAAAA HTTP/1.1" 200
+
