@@ -138,7 +138,8 @@ def do_admin_login():
 
     if request.method == 'POST':
         if (request.form['password'] == 'password' and request.form['username'] == 'admin') or \
-           (request.form['password'] == 'maxi' and request.form['username'] == 'maxi'):
+           (request.form['password'] == 'maxi' and request.form['username'] == 'maxi') or \
+           (request.form['password'] == 'Paul' and request.form['username'] == 'Paul'):
             session['username'] = request.form['username']
             session['logged_in'] = True
             return redirect(url_for('home'), code=302)
@@ -333,5 +334,6 @@ if __name__ == "__main__":
     bkg_process()
     # app.secret_key = os.urandom(12)
     # app.run(debug=True,host='0.0.0.0', port=5000)    #    app.run(host='0.0.0.0', debug=True, threaded=True)
-    socketio.run(app, host='0.0.0.0', debug=True)
+    # socketio.run(app, host='0.0.0.0', debug=True)
+    socketio.run(app, host='0.0.0.0', debug=True, use_reloader=False)    #werkzeug no reload
 

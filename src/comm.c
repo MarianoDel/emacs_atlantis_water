@@ -34,7 +34,8 @@ typedef enum {
 } manager_state_e;
 
 
-#define TT_PACKET    20    //20ms for timeouts
+// #define TT_PACKET    20    //20ms for timeouts
+#define TT_PACKET    100    //20ms for timeouts for problems with app
 #define TT_MGR_PACKET_NO_LINK    5000
 #define TT_MGR_PACKET_KEEP_LINK    1500
 #define PACKETS_FOR_LINK_DOWN    5
@@ -279,8 +280,8 @@ void COMM_Manager_SM (void)
 }
 
 
-#define WINDOW_WAIT_ANSWER    50
-#define WINDOW_CHANNEL_SPACE    200
+#define WINDOW_WAIT_ANSWER    100
+#define WINDOW_CHANNEL_SPACE    150
 
 #define WINDOW_START_CH1    50
 #define WINDOW_END_CH1    (WINDOW_START_CH1 + WINDOW_CHANNEL_SPACE)    //250ms
