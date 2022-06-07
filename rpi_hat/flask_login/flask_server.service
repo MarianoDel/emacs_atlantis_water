@@ -1,0 +1,11 @@
+[Unit]
+Description=Flask Server Water Meter over IP
+After=rc-local.service
+   
+[Service]
+WorkingDirectory=/home/pi/emacs_atlantis_water/rpi_hat/flask_login
+ExecStart=/bin/bash -c '/usr/bin/python3 /home/pi/emacs_atlantis_water/rpi_hat/flask_login/app.py > /home/pi/emacs_atlantis_water/rpi_hat/flask_login/app.log 2>&1'
+   
+[Install]
+WantedBy=multi-user.target
+
