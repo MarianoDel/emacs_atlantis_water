@@ -441,6 +441,12 @@ def Test_Write_Config_File ():
     
     WriteConfigFile()
     
+
+def Test_Create_Empty_File ():
+    ReadConfigFile(True)
+    WriteConfigFile()
+    print('flash_data.txt empty created!')
+    
     
 ##############
 # Main Tests #
@@ -448,8 +454,8 @@ def Test_Write_Config_File ():
 if __name__ == "__main__":
     # Tests_For_Pulses()
 
-    Test_Write_Config_File()
+    # Test_Write_Config_File()
 
-    Test_Read_Config_File()
+    # Test_Read_Config_File()
 
-    
+    Test_Create_Empty_File()
