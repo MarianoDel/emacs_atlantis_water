@@ -155,6 +155,9 @@ echo "removing tmp and old files..."
 rm -rf templates/*.html_old
 sleep 0.1
 
+# to create patching files
+# diff -u file1.html file2.html > patchfile.patch
+#
 # patching the new files
 echo "patching new files files..."
 patch static/js/meter_validation.js < meter_validation.patch

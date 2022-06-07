@@ -42,3 +42,8 @@
    - sudo apt-get install python3-pip
    - sudo pip3 install pyserial
 
+
+* con sistema automatico migrar.sh
+  - quitar Archive.zip
+  - bajar el nuevo Archive.zip
+  - ejecutar migrar.sh

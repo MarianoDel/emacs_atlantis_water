@@ -190,9 +190,20 @@ button[type=submit]:hover {
 	margin-bottom: 36px;
 	color: #294772;;
 }
+/*Colores*/
+/*#c3d939;
+#fec82e;
+#ff8000;
+#b67bf4;
+#aa00ff;
+#0380ff;
+#5bd1ed;
+*/
+
+
 
 .contenedor_botones button {
-	background-color: #294772;
+	/*background-color: #294772;*/
 	color: white;
 	padding: 12px 20px;
 	border: 2px solid #294772;
@@ -205,16 +216,40 @@ button[type=submit]:hover {
 	margin: 20px;
 }
 
-.contenedor_botones button:hover {
+/*.contenedor_botones button:hover {
 	background-color: white;
 	color: #294772;
 	border: 2px solid #294772;
+}*/
+
+.contenedor_botones button:nth-of-type(1) {
+	background-color: #c3d939;
+	border: 2px solid #c3d939;
 }
 
+.contenedor_botones button:nth-of-type(2) {
+	background-color: #aa00ff;
+	border: 2px solid #aa00ff;
+}
+
+.contenedor_botones button:nth-of-type(3) {
+	background-color: #0380ff;
+	border: 2px solid #0380ff;
+}
+
+.contenedor_botones button:nth-of-type(4) {
+	background-color: #fec82e;
+	border: 2px solid #fec82e;
+}
+
+.contenedor_botones button:nth-of-type(5) {
+	background-color: #5bd1ed;
+	border: 2px solid #5bd1ed;
+}
 .seleccionado {
 	background-color: white !important; 
-	color: #294772 !important;
-	border: 2px solid #294772 !important;
+	color: #ff8000 !important;
+	border: 2px solid #ff8000 !important;
 }
 
 .contenedor_meters {
@@ -227,7 +262,7 @@ button[type=submit]:hover {
 	width: 37%;
 	position: relative;
 	margin: 0 34px 25px;
-	min-width: 450px;
+	min-width: 380px;
 	background-color: rgba(234, 234, 234, .6);
 	border-radius: 10px;
 }
@@ -255,14 +290,14 @@ button[type=submit]:hover {
 .number {
 	position: absolute;
 	top: 35%;
-	width: 64%;
+	width: 63%;
 	height: 29%;
 	text-align: right;
 	font-size: 60px;
 	color: #252121;
 	background-color: #565858;
 	border-radius: 6px;
-	padding: 4%;
+	padding: 14px;
 	left: 17%;
 	font-family: myFirstFont;
 }
@@ -778,5 +813,68 @@ header h1 {
 	font-size: 22px;
 }
 
+@media screen and (max-width: 1530px) {
+
+.number {
+  font-size: 56px;
+  height: 28%;
+}
+
+}
 
 
+@media screen and (max-width: 1220px) {
+
+.contenedor_botones {
+  width: 100%;
+  flex-direction: row;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.contenedor_meters {
+	width: 100%;
+}
+
+.contenedor_botones button {
+  min-width: 270px;
+}
+
+}
+
+@media screen and (max-width: 620px) {
+
+.contenedor_botones button {
+  min-width: 380px;
+}
+
+}
+
+@media screen and (max-width: 420px) {
+
+.contenedor_botones button, .contenedor-meter {
+  min-width: 90%;
+}
+
+.contenedor-meter-img {
+    padding: 9px;
+}
+
+.number {
+	font-size: 46px;
+	top: 33%;
+	width: 70%;
+	height: 34%;
+	text-align: right;
+	left: 14%;
+}
+
+#led {
+  right: 10.3%;
+  top: 36.4%;
+}
+
+header img {
+	margin: auto;
+}
+}

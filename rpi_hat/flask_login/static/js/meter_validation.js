@@ -93,7 +93,7 @@ socket.on('meter2', function(msg) {
 })
 
 socket.on('meter3', function(msg) {
-    console.log(msg);
+   console.log(msg);
     let meter3_data = msg.data;
     console.log('meter3_data: ' + meter3_data);
     imprimirEnMedidor(2, meter3_data);
@@ -109,7 +109,7 @@ socket.on('meter4', function(msg) {
 socket.on('redirect', function(msg) {
     console.log(msg);
     let user_login = msg.data;
-    console.log("username: " + user_login + " not allowed here");
+   console.log("username: " + user_login + " not allowed here");
     window.location.replace('/login');
 })
 
