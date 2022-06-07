@@ -69,7 +69,8 @@ A partir de ahora., cada vez que se acceda al nombre de dominio vhfpilotage.duck
 
 
 * Arranque automatico como un servicio
-  - https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units
+** link tutorial
+   - https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units
 
 ** ejemplo express_server.service
    [Unit]
@@ -83,6 +84,11 @@ A partir de ahora., cada vez que se acceda al nombre de dominio vhfpilotage.duck
    
    [Install]
    WantedBy=multi-user.target
+
+** crear link simbolico en /etc/systemd/system
+   $ cd /etc/systemd/system
+   $ ln -s ~/flask_app/flask_server.service flask_server.service
+   $ cd -
 
 ** para probar y correr el servicio
    $ sudo systemctl start application.service

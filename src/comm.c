@@ -269,7 +269,10 @@ void COMM_Manager_SM (void)
         }
 
         if (!manager_timer)    // link its down
+        {
+            LF_Link_Reset();
             manager_state = MGR_INIT;
+        }
 
         break;
 

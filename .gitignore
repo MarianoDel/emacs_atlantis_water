@@ -17,3 +17,4 @@ GTAGS
 *.gcno
 *.pyc
 Archive
+app.log
