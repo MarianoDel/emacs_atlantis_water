@@ -2,7 +2,7 @@
 *.lst
 *.o
 *.out
-*.elf
+.elf
 *.map
 *.bin
 .tags
