@@ -7,6 +7,7 @@ import json
 import os
 from blinker import signal
 import threading
+import gc
 
 
 ### GLOBALS FOR CONFIGURATION #########
@@ -236,6 +237,10 @@ def one_hour_timer_process (mymy):
     pulses_current_hour[1] = 0
     pulses_current_hour[2] = 0
     pulses_current_hour[3] = 0
+
+    # gc-collect every hour
+    gc.collect()
+    
 
 one_hour_signal.connect(one_hour_timer_process)
 
