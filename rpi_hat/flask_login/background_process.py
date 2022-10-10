@@ -42,6 +42,7 @@ class MeterProcess:
         self.meas_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
 
         self.link_up_rx_timeout = 0
+        self.link_led_alive_timer = 0
         self.tt = 0
 
         self.measCallback = cb
@@ -99,11 +100,11 @@ class MeterProcess:
         self.tt.start()
 
         # init the leds state
-        # self.link_up_led = False
-        # LedLinkOff()
-        self.link_up_led = True
-        LedLinkOn()
-        self.link_up_rx_timeout = 100
+        self.link_up_led = False
+        LedLinkOff()
+        # self.link_up_led = True
+        # LedLinkOn()
+        # self.link_up_rx_timeout = 100
 
         # init the loop process
         print("MeterProcess initialized")
@@ -127,6 +128,10 @@ class MeterProcess:
             for i in range(len(self.meas_channel)):
                 self.meas_channel[i] = 0
 
+        if self.link_led_alive_timer == 0:
+            self.link_led_alive_timer = 30
+            self.LedLinkPulse()
+            
         time.sleep(0.001)
 
 
@@ -277,6 +282,9 @@ class MeterProcess:
         if self.link_up_rx_timeout > 0:
             self.link_up_rx_timeout -= 1
 
+        if self.link_led_alive_timer > 0:
+            self.link_led_alive_timer -= 1
+            
         self.tt = threading.Timer(interval=0.1, function=self.ModuleTimeouts)
         self.tt.start()
 
