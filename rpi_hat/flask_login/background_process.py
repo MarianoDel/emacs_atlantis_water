@@ -99,8 +99,11 @@ class MeterProcess:
         self.tt.start()
 
         # init the leds state
-        self.link_up_led = False
-        LedLinkOff()
+        # self.link_up_led = False
+        # LedLinkOff()
+        self.link_up_led = True
+        LedLinkOn()
+        self.link_up_rx_timeout = 100
 
         # init the loop process
         print("MeterProcess initialized")
