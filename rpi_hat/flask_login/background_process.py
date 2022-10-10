@@ -32,7 +32,6 @@ class MeterProcess:
         self.cb = cb
 
         self.answer_ok = False
-        self.link_up = False
         self.keeps = 0
         self.okeys = 0
         self.noks = 0
@@ -42,7 +41,6 @@ class MeterProcess:
         self.last_getted = -1
         self.meas_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
 
-        self.link_up_tx_timeout = 0
         self.link_up_rx_timeout = 0
         self.tt = 0
 
@@ -163,7 +161,10 @@ class MeterProcess:
                 if ans == 1:
                     self.answer_ok = True
                     self.answer_ok_seq = self.last_sequence
-                    self.link_up = True
+                    self.link_up_rx_timeout = 20
+                    self.link_up_led = True
+                    self.LedLinkOn()
+
 
             else:
                 # print("bad packet, no process")
@@ -270,9 +271,6 @@ class MeterProcess:
     ###############
     # 100ms timer
     def ModuleTimeouts (self):
-        if self.link_up_tx_timeout > 0:
-            self.link_up_tx_timeout -= 1
-
         if self.link_up_rx_timeout > 0:
             self.link_up_rx_timeout -= 1
 

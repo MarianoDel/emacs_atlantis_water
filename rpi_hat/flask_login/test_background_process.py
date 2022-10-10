@@ -121,6 +121,27 @@ def bkg_test ():
         else:
             myseq = 1
 
+        mytest_state = 'send_p5'
+
+    elif mytest_state == 'send_p5':
+        seq_msg = 's{0:03d}'.format(myseq - 1)
+        pulses_1 = random.randrange(0,999)
+        pulses_2 = random.randrange(0,999)
+        pulses_3 = random.randrange(0,999)
+        pulses_4 = random.randrange(0,999)
+        pulses_ch = pulses_1 + pulses_2 + pulses_3 + pulses_4
+        p1 = '{0:03d}'.format(pulses_1)
+        p2 = '{0:03d}'.format(pulses_2)
+        p3 = '{0:03d}'.format(pulses_3)
+        p4 = '{0:03d}'.format(pulses_4)
+        pc = '{0:04d}'.format(pulses_ch)        
+        message = seq_msg + ' ' + p1 + ' ' + p2 + ' ' + p3 + ' ' + p4 + ' ' + pc
+        my_proc.MySerialCallback(message)
+        if myseq < 999:
+            myseq += 1
+        else:
+            myseq = 1
+
         mytest_state = 'init'
         
     else:
