@@ -12,8 +12,11 @@ import threading
 class Packet_Info:
     def __init__(self, sequence=0, pulse=0, channel=0):
         self.sequence = sequence
-        self.pulse = pulse
-        self.channel = channel
+        self.pulses_ch1 = pulse
+        self.pulses_ch2 = pulse
+        self.pulses_ch3 = pulse
+        self.pulses_ch4 = pulse
+        self.pulses_check = pulse
 
 
 class Statics_Info:
@@ -106,31 +109,17 @@ class MeterProcess:
 
         
     def CommsProcess(self):
-        # receiv 'ok' to a 'keepalive'
-        if self.link_up:
-            self.link_up = False
-            self.link_up_rx_timeout = 50
-            if self.link_up_led == False:
-                self.link_up_led = True
-                self.LedLinkOn()
-
-        # answer 'ok' to a keepalive asking
+        # answer 'ok' to a meas packet asking
         if self.answer_ok:
             self.answer_ok = False
-            self.link_up_tx_timeout = 7
             time.sleep(0.005)
-            self.transmission('ok\n')
+            seq_str = '{0:03d}'.format(self.answer_ok_seq)
+            self.transmission('s' + seq_str + ' ok\n')
 
         if self.link_up_rx_timeout == 0:
             if self.link_up_led:
                 self.link_up_led = False
                 self.LedLinkOff()
-                # with link down reset the seq number
-                self.last_sequence = 0
-
-        if self.link_up_tx_timeout == 0:
-            self.transmission('keepalive\n')
-            self.link_up_tx_timeout = 15
 
         if self.meas_channel != [0, 0, 0, 0, 0]:
             self.measCallback(self.meas_channel)
@@ -167,24 +156,14 @@ class MeterProcess:
             if ord(to_clean_data[i]) != 0:
                 data_rx += to_clean_data[i]
 
-        if len(data_rx) > 0:
-            if data_rx.startswith("keepalive"):
-                self.answer_ok = True
-                self.keeps += 1
-
-            elif data_rx.startswith("s"):
+        if len(data_rx) >= 25:
+            print("rx len: " + str(len(data_rx)) + " data: " + str(data_rx))
+            if data_rx.startswith('s'):
                 ans = self.process_packet(data_rx)
                 if ans == 1:
                     self.answer_ok = True
+                    self.answer_ok_seq = self.last_sequence
                     self.link_up = True
-
-            elif data_rx.startswith("ok"):
-                self.link_up = True
-                self.okeys += 1
-
-            elif data_rx.startswith("nok"):
-                # self.link_up = True
-                self.noks += 1
 
             else:
                 # print("bad packet, no process")
@@ -199,27 +178,39 @@ class MeterProcess:
             print("bad sequence packet, no process")
             return 0
 
-        if pkt.sequence == 0 or \
-           pkt.sequence <= self.last_sequence:
-            print("bad sequence number, no process")
+        if pkt.sequence == self.last_sequence:
+            print("same seq packet, no process")
             return 0
 
-        self.meas_channel[pkt.channel] += pkt.pulses
-        if pkt.sequence != 999:
-            self.last_sequence = pkt.sequence
-        else:
-            self.last_sequence = 0
+        if pkt.pulses_check != pkt.pulses_ch1 + pkt.pulses_ch2 + pkt.pulses_ch3 + pkt.pulses_ch4:
+            print(str(pkt.pulses_ch1))
+            print(str(pkt.pulses_ch2))
+            print(str(pkt.pulses_ch3))
+            print(str(pkt.pulses_ch4))            
+            print(str(pkt.pulses_check))
+            print("bad checksum, no process")
+            return 0
+        
+        self.meas_channel[1] += pkt.pulses_ch1
+        self.meas_channel[2] += pkt.pulses_ch2
+        self.meas_channel[3] += pkt.pulses_ch3
+        self.meas_channel[4] += pkt.pulses_ch4
+
+        self.last_sequence = pkt.sequence
 
         return 1
 
 
     def check_packet_info_from_string (self, data, pkt):
         sequence = 0
-        pulses = 0
-        channel = 0
+        pulses_ch1 = 0
+        pulses_ch2 = 0
+        pulses_ch3 = 0
+        pulses_ch4 = 0
+        pulses_check = 0        
 
         # only str or str+\n
-        if len(data) < 19 or len(data) > 20:
+        if len(data) < 25 or len(data) > 26:
             print("bad length")
             return 0
 
@@ -229,32 +220,26 @@ class MeterProcess:
             print("bad sequence str")
             return 0
 
-        if data[4:12] != ' pulses ':
-            print("bad pulses str: " + data[4:12])
-            return 0
-
         try:
-            pulses = int(data[12:15])
+            pulses_ch1 = int(data[5:8])
+            pulses_ch2 = int(data[9:12])
+            pulses_ch3 = int(data[13:16])
+            pulses_ch4 = int(data[17:20])
+            pulses_check = int(data[21:25])            
         except:
-            print("bad pulses number: " + data[12:15])
+            print("bad pulses number: " + data[5:8])
+            print("bad pulses number: " + data[9:12])
+            print("bad pulses number: " + data[13:16])
+            print("bad pulses number: " + data[17:20])
+            print("bad pulses number: " + data[21:25])            
             return 0
-
-        channel = data[16:19]
-        if channel == 'ch1':
-            channel = 1
-        elif channel == 'ch2':
-            channel = 2
-        elif channel == 'ch3':
-            channel = 3
-        elif channel == 'ch4':
-            channel = 4
-        else:
-            print("bad channel number: " + data[16:])
-            return 0
-
+        
         pkt.sequence = sequence
-        pkt.pulses = pulses
-        pkt.channel = channel
+        pkt.pulses_ch1 = pulses_ch1
+        pkt.pulses_ch2 = pulses_ch2
+        pkt.pulses_ch3 = pulses_ch3
+        pkt.pulses_ch4 = pulses_ch4
+        pkt.pulses_check = pulses_check
         return 1
 
     

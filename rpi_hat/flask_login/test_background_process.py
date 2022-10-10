@@ -61,14 +61,13 @@ def bkg_test ():
 
     # send data to serial_mock and recall
     if mytest_state == 'init':
-        my_proc.MySerialCallback('keepalive')
         mytest_state = 'send_p1'
         
     elif mytest_state == 'send_p1':
         seq_msg = 's{0:03d}'.format(myseq)
         pulses = 1
         pulses_msg = '{0:03d}'.format(pulses)
-        message = seq_msg + ' pulses ' + pulses_msg + ' ch1'
+        message = seq_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' 0000'
         my_proc.MySerialCallback(message)
         if myseq < 999:
             myseq += 1
@@ -79,9 +78,43 @@ def bkg_test ():
         
     elif mytest_state == 'send_p2':
         seq_msg = 's{0:03d}'.format(myseq)
-        pulses = 1
+        pulses = 0
         pulses_msg = '{0:03d}'.format(pulses)
-        message = seq_msg + ' pulses ' + pulses_msg + ' ch2'
+        message = seq_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' 0000'
+        my_proc.MySerialCallback(message)
+        if myseq < 999:
+            myseq += 1
+        else:
+            myseq = 1
+
+        mytest_state = 'send_p3'
+
+    elif mytest_state == 'send_p3':
+        seq_msg = 's{0:03d}'.format(myseq)
+        pulses = 2
+        pulses_msg = '{0:03d}'.format(pulses)
+        message = seq_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' ' + pulses_msg + ' 0008'
+        my_proc.MySerialCallback(message)
+        if myseq < 999:
+            myseq += 1
+        else:
+            myseq = 1
+
+        mytest_state = 'send_p4'
+
+    elif mytest_state == 'send_p4':
+        seq_msg = 's{0:03d}'.format(myseq)
+        pulses_1 = random.randrange(0,999)
+        pulses_2 = random.randrange(0,999)
+        pulses_3 = random.randrange(0,999)
+        pulses_4 = random.randrange(0,999)
+        pulses_ch = pulses_1 + pulses_2 + pulses_3 + pulses_4
+        p1 = '{0:03d}'.format(pulses_1)
+        p2 = '{0:03d}'.format(pulses_2)
+        p3 = '{0:03d}'.format(pulses_3)
+        p4 = '{0:03d}'.format(pulses_4)
+        pc = '{0:04d}'.format(pulses_ch)        
+        message = seq_msg + ' ' + p1 + ' ' + p2 + ' ' + p3 + ' ' + p4 + ' ' + pc
         my_proc.MySerialCallback(message)
         if myseq < 999:
             myseq += 1
