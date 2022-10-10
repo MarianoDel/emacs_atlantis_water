@@ -20,13 +20,15 @@
 
 
 // Externals -------------------------------------------------------------------
-extern unsigned char valid_packet;
 extern comm_resp_e send_packet_ack;
-extern unsigned char manager_state;
-extern unsigned char send_packet_timeout;
+extern unsigned short send_packet_timeout;
 extern unsigned char send_packet_state;
+extern unsigned short manager_timer;
 
+extern unsigned char seq_ack;
 
+extern unsigned short COMM_WritePacket (char * p_buff, char * p_to_send);
+extern comm_resp_e COMM_ProcessPayload (char * payload);
 // Globals ---------------------------------------------------------------------
 
 
@@ -65,11 +67,9 @@ void Test_Comms_Manager (void);
 int main(int argc, char *argv[])
 {
 
-    Test_Comms_Basic_Functions ();
+    // Test_Comms_Basic_Functions ();
 
-    Test_Comms_Received_Data ();
-
-    Test_Comms_Manager ();
+    // Test_Comms_Manager ();
 
     Test_Send_Packet ();
     
@@ -80,392 +80,155 @@ void Test_Comms_Basic_Functions (void)
 {
     char message[200];
 
-    COMM_SendKeepAlive();
     Usart1GetMessageSended(message);
-    printf("Test keepalive: ");    
-    if (strcmp("keepalive\n", message) == 0)
-        PrintOK();
-    else
-        PrintERR();
+    printf("Test COMM_WritePacket sequence: ");
 
-    COMM_SendOK();
-    Usart1GetMessageSended(message);
-    printf("Test send ok: ");    
-    if (strcmp("ok\n", message) == 0)
-        PrintOK();
-    else
-        PrintERR();
-    
-    COMM_SendNOK();
-    Usart1GetMessageSended(message);
-    printf("Test send nok: ");    
-    if (strcmp("nok\n", message) == 0)
-        PrintOK();
-    else
-        PrintERR();
-    
-}
-
-
-void Test_Comms_Received_Data (void)
-{
-    char msg [200];
-    char msg_tx [200];    
-
-    valid_packet = 0;
-    strcpy (msg, "keepalive\n");
-    COMM_ProcessPayload(msg);
-    Usart1GetMessageSended(msg_tx);
-
-    printf("Test rx keepalive: ");    
-    if ((valid_packet) &&
-        (strcmp("ok\n", msg_tx) == 0))
+    int sequence = 0;
+    int error = 0;
+    for (int i = 0; i < 2000; i++)
     {
-        PrintOK();
+        sequence = COMM_WritePacket (message, "000 000 000 000 0000");
+        if ((sequence < 1) || (sequence > 999))
+        {
+            error = 1;
+            break;
+        }
+    }
+
+    if (error)
+    {
+        PrintERR();
+        printf("error on sequence: %d\n", sequence);
     }
     else
-        PrintERR();
-
-
-    valid_packet = 0;
-    strcpy (msg, "ok\n");
-    COMM_ProcessPayload(msg);
-
-    printf("Test rx ok: ");    
-    if ((valid_packet) &&
-        (send_packet_ack == resp_sended_ok))
-    {
         PrintOK();
-    }
+
+    printf("Test COMM_WritePacket string: ");
+    PrintOK();
+    sequence = COMM_WritePacket (message, "000 000 000 000 0000");
+    printf("\n");
+    printf(message);
+
+    sequence = COMM_WritePacket (message, "000 000 000 000 0000");
+    printf("\n");
+    printf(message);
+
+    sequence = COMM_WritePacket (message, "000 000 000 000 0000");
+    printf("\n");
+    printf(message);
+
+    char error_str [100];
+    strcpy(error_str, "s  s  sok");
+    printf("Test COMM_ProcessPayload error %s: ", error_str);
+    if (COMM_ProcessPayload(error_str) == resp_sended_nok)
+        PrintOK();
     else
         PrintERR();
 
-
-    valid_packet = 0;
-    strcpy (msg, "nok\n");
-    COMM_ProcessPayload(msg);
-
-    printf("Test rx nok: ");    
-    if ((valid_packet) &&
-        (send_packet_ack == resp_sended_nok))
-    {
+    strcpy(error_str, "s00000 ok");
+    printf("Test COMM_ProcessPayload error %s: ", error_str);
+    if (COMM_ProcessPayload(error_str) == resp_sended_nok)
         PrintOK();
-    }
     else
         PrintERR();
-    
+
+    strcpy(error_str, "s00  ok");
+    printf("Test COMM_ProcessPayload error %s: ", error_str);
+    if (COMM_ProcessPayload(error_str) == resp_sended_nok)
+        PrintOK();
+    else
+        PrintERR();
+
+    printf("Test COMM_ProcessPayload all seq ok: ");
+    for (int i = 0; i < 1000; i++)
+    {        
+        sprintf(message, "s%03d ok", i);
+        if (COMM_ProcessPayload(message) == resp_sended_nok)
+        {
+            error = 1;
+            break;
+        }
+    }
+
+    if (error)
+    {
+        PrintERR();
+        printf("error on sequence: %s\n", message);
+    }
+    else
+        PrintOK();
+        
 }
 
 
 void Test_Comms_Manager (void)
 {
-    Led_Link_Show_Status(1);
-    valid_packet = 0;
-    printf("Test Manager SM reset: ");
-    manager_state = 5;
-    COMM_Manager_Reset_SM ();
-    if (manager_state == 0)
-        PrintOK();
-    else
-        PrintERR();
-
-    printf("Test Manager SM default: ");
-    manager_state = 5;
-    COMM_Manager_SM ();
-    if (manager_state == 0)
-        PrintOK();
-    else
-        PrintERR();
-
-    
-    printf("Test Manager SM no link: ");
-    for (int i = 0; i < (150 + 1); i++)    //150ms for led toggle
+    // up led link
+    Led_Link_Show_Status (1);
+    COMM_Manager ();
+    send_packet_ack = resp_working;
+    Usart1FillRxBuffer ("s000 ok");
+    COMM_Manager ();
+    Led_Link_Show_Status(0);
+    for (int i = 0; i < 1505; i++)
     {
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
+        COMM_Manager ();
+        if (manager_timer)
+            manager_timer--;
+        else
+        {
+            Led_Link_Show_Status(1);
+            printf("on i: %d\n", i);
+        }
     }
 
-    if (manager_state == 1)
+    printf("Comm manager test: ");
+    if (send_packet_ack == resp_sended_ok)
         PrintOK();
     else
         PrintERR();
-
-
-    // Usart1FillRxBuffer("ok\n");
-    printf("Test Manager SM one link: ");
-    COMM_ProcessPayload ("ok\n");
-    for (int i = 0; i < (150 + 1); i++)    //150ms for led toggle
-    {
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-    }
-
-    if (manager_state == 2)
-        PrintOK();
-    else
-        PrintERR();
-
-
-    printf("Test Manager SM drop link: ");
-    for (int i = 0; i < 6500; i++)
-    {
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-    }
-
-    if (manager_state == 1)
-        PrintOK();
-    else
-        PrintERR();
-
-    
-    printf("Test Manager SM one link: ");
-    COMM_ProcessPayload ("ok\n");
-    for (int i = 0; i < (150 + 1); i++)    //150ms for led toggle
-    {
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-
-        LF_Timeouts ();
-    }
-
-    if (manager_state == 2)
-        PrintOK();
-    else
-        PrintERR();
-
-    
 }
 
 
 void Test_Send_Packet (void)
 {
+    int error = 0;
     int ans = 1000;
     char s_answer [200];
 
+    ans = COMM_SendPacket ("001 001 001 001 0000", 1000);
+    if ((ans == resp_working) &&
+        (send_packet_state == 1))
+    {
+        error = 1;
+    }
+
+    Usart1FillRxBuffer ("s001 ok");
+    for (int i = 0; i < 10; i++)
+    {
+        ans = COMM_SendPacket ("001 001 001 001 0000", 1000);
+        if (ans != resp_working)
+            break;
+
+        COMM_Manager();
+    }
+
+    if ((ans == resp_sended_ok) &&
+        (send_packet_state == 0) &&
+        (seq_ack == 1))
+    {
+        error = 2;
+    }
+
     printf("Test Send Packet default: ");
-    send_packet_state = 5;
-    ans = COMM_SendPacket ("pulse 001 ch1\n");
-    if ((ans == resp_working) &&
-        (send_packet_state == 0))
-        PrintOK();
-    else
-        PrintERR();
 
-
-    // printf("Test Send Packet sended ok: ");
-    for (int i = 0; i < 6500; i++)
+    if (error != 2)
     {
-        ans = COMM_SendPacket ("pulse 001 ch1\n");
-  //   resp_working,
-  //   resp_sended_ok,
-  //   resp_sended_nok,
-  //   resp_packet_nok,    
-  //   resp_timeout
-
-        if (ans != resp_working)
-        {
-            sprintf(s_answer, "on index i: %d resp: %d", i, ans);
-            break;
-        }
-
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-
-        COMM_ProcessPayload ("ok\n");        
+        PrintERR();
+        printf("error: %d\n", error);
     }
-    printf("Test Send Packet sended ok: ");
-    if (ans == 1)
-        PrintOK();
     else
-        PrintERR();
-
-    printf("%s\n\n", s_answer);
-    
-
-    // printf("Test Send Packet sended nok: ");
-    for (int i = 0; i < 6500; i++)
-    {
-        ans = COMM_SendPacket ("pulse 001 ch1\n");
-  //   resp_working,
-  //   resp_sended_ok,
-  //   resp_sended_nok,
-  //   resp_packet_nok,    
-  //   resp_timeout
-
-        if (ans != resp_working)
-        {
-            sprintf(s_answer, "on index i: %d resp: %d", i, ans);
-            break;
-        }
-
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-
-        COMM_ProcessPayload ("nok\n");        
-    }
-    printf("Test Send Packet sended nok: ");
-    if (ans == 2)
         PrintOK();
-    else
-        PrintERR();
-    
-    printf("%s\n\n", s_answer);
-
-    
-    // printf("Test Send Packet nok too long: ");
-    for (int i = 0; i < 6500; i++)
-    {
-        ans = COMM_SendPacket ("pulse pulse pulse pulse 001 ch1\n");
-  //   resp_working,
-  //   resp_sended_ok,
-  //   resp_sended_nok,
-  //   resp_packet_nok,    
-  //   resp_timeout
-
-        if (ans != resp_working)
-        {
-            sprintf(s_answer, "on index i: %d resp: %d", i, ans);
-            break;
-        }
-
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-    }
-    printf("Test Send Packet nok too long: ");
-    if (ans == 3)
-        PrintOK();
-    else
-        PrintERR();
-
-    printf("%s\n\n", s_answer);
-
-
-    // printf("Test Send Packet nok too small: ");
-    for (int i = 0; i < 6500; i++)
-    {
-        ans = COMM_SendPacket ("");
-  //   resp_working,
-  //   resp_sended_ok,
-  //   resp_sended_nok,
-  //   resp_packet_nok,    
-  //   resp_timeout
-
-        if (ans != resp_working)
-        {
-            sprintf(s_answer, "on index i: %d resp: %d", i, ans);
-            break;
-        }
-
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-    }
-    printf("Test Send Packet nok too small: ");
-    if (ans == 3)
-        PrintOK();
-    else
-        PrintERR();
-
-    printf("%s\n\n", s_answer);
-    
-
-    // printf("Test Send Packet timeout: ");
-    for (int i = 0; i < 6500; i++)
-    {
-        ans = COMM_SendPacket ("pulse 001 ch1\n");
-  //   resp_working,
-  //   resp_sended_ok,
-  //   resp_sended_nok,
-  //   resp_packet_nok,    
-  //   resp_timeout
-
-        if (ans != resp_working)
-        {
-            sprintf(s_answer, "on index i: %d resp: %d", i, ans);
-            break;
-        }
-
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-    }
-    printf("Test Send Packet timeout: ");
-    if (ans == 4)
-        PrintOK();
-    else
-        PrintERR();
-
-    printf("%s\n\n", s_answer);
-
-
-    // printf("Test Send Packet no newline: ");
-    for (int i = 0; i < 6500; i++)
-    {
-        ans = COMM_SendPacket ("pulse 001 ch1");
-  //   resp_working,
-  //   resp_sended_ok,
-  //   resp_sended_nok,
-  //   resp_packet_nok,    
-  //   resp_timeout
-
-        if (ans != resp_working)
-        {
-            sprintf(s_answer, "on index i: %d resp: %d", i, ans);
-            break;
-        }
-
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-    }
-    printf("Test Send Packet no newline: ");
-    if (ans == 4)
-        PrintOK();
-    else
-        PrintERR();
-
-    printf("%s\n\n", s_answer);
-
-    printf("Test Send Packet READY_TO_SEND: ");
-    if (COMM_ReadyToSend())
-        PrintOK();
-    else
-        PrintERR();
-    
-    // printf("Test Send Packet not READY_TO_SEND: ");
-    ans = COMM_SendPacket ("pulse 001 ch1\n");
-    printf("Test Send Packet not READY_TO_SEND: ");    
-    if ((ans == resp_working) &&
-        (!COMM_ReadyToSend()))
-        PrintOK();
-    else
-        PrintERR();
-
-
-    // printf("Test Send Packet seq loop: ");
-    int seq = 0;
-    do {
-        ans = COMM_SendPacket ("pulse 001 ch1");
-        if (ans != resp_working)
-            seq++;
-
-        COMM_Manager_SM ();
-        COMM_Timeouts ();
-        LF_Timeouts ();
-        
-    } while (seq < 1000);
-    printf("Test Send Packet seq loop: ");
-    if (ans == 4)
-        PrintOK();
-    else
-        PrintERR();
 
 }
 
@@ -585,6 +348,17 @@ unsigned char Led_Pulse4_Is_On (void)
 }
 
 
+void Usart1SendDelayed (char * to_send)
+{
+    int len = strlen(to_send);
+
+    if (len < 128)
+    {
+        Usart1Send(to_send);
+    }
+    else
+        printf("Usart1SendDelayed ERROR! buffer too long\n");
+}
 //--- end of file ---//
 
 

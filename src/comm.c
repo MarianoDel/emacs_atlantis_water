@@ -13,27 +13,14 @@
 #include "usart.h"
 #include "led_functions.h"
 #include "tim.h"
+#include "utils.h"
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 // Private Types Constants and Macros ------------------------------------------
-typedef enum {
-    READY_TO_SEND,
-    WAIT_ACKNOWLEDGE
-
-} send_packet_state_e;
-
-
-typedef enum {
-    MGR_INIT,
-    MGR_NO_LINK,
-    MGR_IN_LINK
-
-} manager_state_e;
-
-
 // #define TT_PACKET    20    //20ms for timeouts
 #define TT_PACKET    100    //20ms for timeouts for problems with app
 #define TT_MGR_PACKET_NO_LINK    5000
@@ -45,67 +32,51 @@ typedef enum {
 
 
 // Globals ---------------------------------------------------------------------
-volatile unsigned char send_packet_timeout = 0;
+volatile unsigned short send_packet_timeout = 0;
 volatile unsigned short manager_timer = 0;
-volatile unsigned short manager_timer_tx = 0;
-unsigned char send_ok_enable = 0;
 
 unsigned short seq = 0;
-// unsigned short send_packet_expected_seq = 0;
+unsigned short seq_ack = 0;
+unsigned short seq_last_sended = 0;
+
 comm_resp_e send_packet_ack = resp_working;
-
-char send_buff [30] = { 0 };
-
-unsigned char valid_packet = 0;
-
+char comm_buff [100] = { 0 };
 
 
 // Module Private Functions ----------------------------------------------------
 unsigned char COMM_SendOKEnable (void);
+comm_resp_e COMM_ProcessPayload (char * payload);
+unsigned short COMM_WritePacket (char * p_buff, char * p_to_send);
 
 
 // Module Functions ------------------------------------------------------------
-void COMM_ProcessPayload (char * payload)
+comm_resp_e COMM_ProcessPayload (char * payload)
 {
-    if (!strncmp(payload, "keepalive", sizeof ("keepalive") - 1))
+    comm_resp_e resp = resp_sended_nok;
+    
+    // check packet must start with s
+    if ((*(payload + 0) == 's') &&
+        (*(payload + 4) == ' '))
     {
-        valid_packet |= VALID_PKT_KEEP;
+        // check if its ok or nok
+        if (strncmp((payload + 5), "ok", sizeof("ok") - 1) == 0)
+        {
+            // sanity check
+            unsigned char len = StringCheckNumbers ((payload + 1), 3);
+            if (len == 3)
+            {
+                seq_ack = atoi((payload + 1));
+                resp = resp_sended_ok;
+            }
+        }
     }
 
-    else if (!strncmp(payload, "ok", sizeof ("ok") - 1))
-    {
-        valid_packet |= VALID_PKT_OK;
-        send_packet_ack = resp_sended_ok;
-    }
-
-    else if (!strncmp(payload, "nok", sizeof ("nok") - 1))
-    {
-        valid_packet |= VALID_PKT_NOK;
-        send_packet_ack = resp_sended_nok;
-    }
-}
-
-
-void COMM_SendKeepAlive (void)
-{
-    Usart1Send("keepalive\n");
-}
-
-
-void COMM_SendOK (void)
-{
-    Usart1Send("ok\n");
-}
-
-
-void COMM_SendNOK (void)
-{
-    Usart1Send("nok\n");
+    return resp;
 }
 
 
 send_packet_state_e send_packet_state = READY_TO_SEND;
-comm_resp_e COMM_SendPacket (char * p_to_send)
+comm_resp_e COMM_SendPacket (char * p_to_send, unsigned short timeout)
 {
     comm_resp_e resp = resp_working;
     unsigned short new_seq = 0;
@@ -113,14 +84,15 @@ comm_resp_e COMM_SendPacket (char * p_to_send)
     switch (send_packet_state)
     {
     case READY_TO_SEND:
-        new_seq = COMM_WritePacket(send_buff, p_to_send);
+        new_seq = COMM_WritePacket(comm_buff, p_to_send);
         if (new_seq)
         {
-            Usart1Send(send_buff);
-            send_packet_timeout = TT_PACKET;
+            Usart1Send(comm_buff);
+            send_packet_timeout = timeout;
             send_packet_ack = resp_working;
-            // send_packet_expected_seq = new_seq;
             send_packet_state++;
+            seq_last_sended = new_seq;
+            LF_Link_Pulse();
         }
         else
             resp = resp_packet_nok;
@@ -131,7 +103,11 @@ comm_resp_e COMM_SendPacket (char * p_to_send)
         if (send_packet_ack == resp_sended_ok)
         {
             send_packet_state = READY_TO_SEND;
-            resp = resp_sended_ok;
+            if (seq_last_sended == seq_ack)
+                resp = resp_sended_ok;
+            else
+                resp = resp_sended_nok;
+            
         }
         else if (send_packet_ack == resp_sended_nok)
         {
@@ -155,12 +131,9 @@ comm_resp_e COMM_SendPacket (char * p_to_send)
 }
 
 
-unsigned char COMM_ReadyToSend (void)
+send_packet_state_e COMM_Get_SendPacket_State (void)
 {
-    if (send_packet_state == READY_TO_SEND)
-        return 1;
-
-    return 0;
+    return send_packet_state;
 }
 
 
@@ -168,9 +141,9 @@ unsigned short COMM_WritePacket (char * p_buff, char * p_to_send)
 {
     unsigned char len = strlen(p_to_send);
 
-    if ((len == 0) || (len > 20))    // no more than 20 bytes of payload
+    if ((len == 0) || (len > 90))
         return 0;
-
+    
     if (seq < 999)    //numbers from 1 to 999
         seq++;
     else
@@ -185,10 +158,10 @@ unsigned short COMM_WritePacket (char * p_buff, char * p_to_send)
 }
 
 
-manager_state_e manager_state = MGR_INIT;
-void COMM_Manager_SM (void)
+unsigned char led_link_latch = 0;
+void COMM_Manager (void)
 {
-    unsigned char valid_pkt_rx = 0;
+    comm_resp_e resp = resp_working;
 
     if (Usart1HaveData())
     {
@@ -196,181 +169,27 @@ void COMM_Manager_SM (void)
             
         Usart1HaveDataReset();
         Usart1ReadBuffer((unsigned char *) local, 128);
-        COMM_ProcessPayload(local);
+        resp = COMM_ProcessPayload(local);
 
-        if (valid_packet & VALID_PKT_KEEP)
+        if (resp == resp_sended_ok)
         {
-            valid_packet = 0;
-            valid_pkt_rx = 1;
-            if (COMM_SendOKEnable())
-            {
-                Wait_ms(5);
-                LF_Link_Pulse();
-                COMM_SendOK();
-            }
+            LF_Link_Set ();
+            led_link_latch = 1;
+            manager_timer = 1500;
+            // acknowledge to sendpacket
+            send_packet_ack = resp_sended_ok;
         }
-
-        // if ((valid_packet & VALID_PKT_OK) ||
-        //     (valid_packet & VALID_PKT_NOK))
-        // {
-        //     valid_packet = 0;
-        //     valid_pkt_rx = 1;
-        // }
     }
-    
-    switch (manager_state)
+
+    if (!manager_timer)    // link its down
     {
-    case MGR_INIT:
-        if (!manager_timer)
-        {
-            manager_timer = 0;
-            COMM_SendOKSet();    // start answering keepsalive
-            manager_state++;
-        }
-        break;
-
-    case MGR_NO_LINK:
-        // send my keepalive
-        if (!manager_timer_tx)
-        {
-            COMM_SendKeepAlive ();            
-            LF_Link_Pulse();
-            manager_timer_tx = TT_MGR_PACKET_KEEP_LINK;            
-        }
-
-        // wait to see the ok
-        if (valid_packet & VALID_PKT_OK)
-        {
-            valid_packet = 0;
-            manager_timer = TT_MGR_PACKET_NO_LINK;
-            LF_Link_Set();
-            manager_state++;
-        }
-        break;
-
-    case MGR_IN_LINK:
-        if (valid_pkt_rx)
-        {
-            valid_pkt_rx = 0;
-            manager_timer = TT_MGR_PACKET_NO_LINK;
-        }
-
-        if (valid_packet & VALID_PKT_OK)
-        {
-            valid_packet = 0;
-            manager_timer = TT_MGR_PACKET_NO_LINK;
-        }
-        
-        if (!manager_timer_tx)
-        {
-            COMM_SendKeepAlive ();
-            LF_Link_Pulse();
-            manager_timer_tx = TT_MGR_PACKET_KEEP_LINK;
-        }
-
-        if (!manager_timer)    // link its down
+        if (led_link_latch)
         {
             LF_Link_Reset();
-            manager_state = MGR_INIT;
+            led_link_latch = 0;
         }
-
-        break;
-
-    default:
-        manager_state = MGR_INIT;
-        break;
-    }
-}
-
-
-#define WINDOW_WAIT_ANSWER    100
-#define WINDOW_CHANNEL_SPACE    150
-
-#define WINDOW_START_CH1    50
-#define WINDOW_END_CH1    (WINDOW_START_CH1 + WINDOW_CHANNEL_SPACE)    //250ms
-
-#define WINDOW_START_CH2    (WINDOW_END_CH1 + WINDOW_WAIT_ANSWER)    //300ms
-#define WINDOW_END_CH2    (WINDOW_START_CH2 + WINDOW_CHANNEL_SPACE)    //500ms
-
-#define WINDOW_START_CH3    800
-#define WINDOW_END_CH3    (WINDOW_START_CH3 + WINDOW_CHANNEL_SPACE)    //1000ms
-
-#define WINDOW_START_CH4    (WINDOW_END_CH3 + WINDOW_WAIT_ANSWER)    //1050ms
-#define WINDOW_END_CH4    (WINDOW_START_CH4 + WINDOW_CHANNEL_SPACE)    //1250ms
-
-unsigned char COMM_TimeWindow (unsigned char ch)
-{
-    unsigned char ans = 0;
-    
-    switch (ch)
-    {
-    case CH1_OFFSET:
-        if ((manager_timer_tx >= WINDOW_START_CH1) &&
-            (manager_timer_tx <= WINDOW_END_CH1))
-            ans = 1;
-        break;
-
-    case CH2_OFFSET:
-        if ((manager_timer_tx >= WINDOW_START_CH2) &&
-            (manager_timer_tx <= WINDOW_END_CH2))
-            ans = 1;            
-        break;
-
-    case CH3_OFFSET:
-        if ((manager_timer_tx >= WINDOW_START_CH3) &&
-            (manager_timer_tx <= WINDOW_END_CH3))
-            ans = 1;            
-        break;
-
-    case CH4_OFFSET:
-        if ((manager_timer_tx >= WINDOW_START_CH4) &&
-            (manager_timer_tx <= WINDOW_END_CH4))
-            ans = 1;            
-        break;
-        
     }
 
-    return ans;
-}
-
-
-void COMM_Manager_Reset_SM (void)
-{
-    manager_state = MGR_INIT;
-    LF_Link_Reset();
-}
-
-
-void COMM_Manager_WaitToStart_SM (unsigned short wait_time)
-{
-    manager_timer = wait_time;
-}
-
-
-unsigned char COMM_Manager_In_Link (void)
-{
-    if (manager_state == MGR_IN_LINK)
-        return 1;
-
-    return 0;
-}
-
-
-unsigned char COMM_SendOKEnable (void)
-{
-    return send_ok_enable;
-}
-
-
-void COMM_SendOKSet (void)
-{
-    send_ok_enable = 1;
-}
-
-
-void COMM_SendOKReset (void)
-{
-    send_ok_enable = 0;
 }
 
 
@@ -382,8 +201,6 @@ void COMM_Timeouts (void)
     if (manager_timer)
         manager_timer--;
 
-    if (manager_timer_tx)
-        manager_timer_tx--;
-    
 }
+
 //--- end of file ---//

@@ -30,18 +30,9 @@
 // Module Types Constants and Macros -------------------------------------------
 typedef enum {
     MAIN_WAIT_TO_START,
-    MAIN_CHECK_P1,
-    MAIN_SEND_P1,
-    MAIN_WAIT_ACK_P1,
-    MAIN_CHECK_P2,
-    MAIN_SEND_P2,
-    MAIN_WAIT_ACK_P2,
-    MAIN_CHECK_P3,
-    MAIN_SEND_P3,
-    MAIN_WAIT_ACK_P3,
-    MAIN_CHECK_P4,
-    MAIN_SEND_P4,
-    MAIN_WAIT_ACK_P4
+    MAIN_CHECK_PULSES,
+    MAIN_SET_PULSES,
+    MAIN_SEND_PULSES_WAIT_ACK
     
 } main_state_e;
 
@@ -120,16 +111,19 @@ int main(void)
     // unsigned short ch1_input_filtered = 0;
     // unsigned short ch2_input_filtered = 0;
 
-    char send_buff [30] = { 0 };
-    unsigned short pulses = 0;
+    char send_buff [100] = { 0 };
+    unsigned short pulses_ch1 = 0;
+    unsigned short pulses_ch2 = 0;
+    unsigned short pulses_ch3 = 0;
+    unsigned short pulses_ch4 = 0;    
 
-    main_state_e main_state = MAIN_CHECK_P1;
+    unsigned short remain_pulses_ch1 = 0;
+    unsigned short remain_pulses_ch2 = 0;
+    unsigned short remain_pulses_ch3 = 0;
+    unsigned short remain_pulses_ch4 = 0;    
+    
+    main_state_e main_state = MAIN_WAIT_TO_START;
     comm_resp_e resp_comm = resp_working;
-
-    unsigned char pck_tx_error = 0;
-
-    COMM_Manager_Reset_SM ();
-    COMM_Manager_WaitToStart_SM (0);    //starts inmediately
 
     ADC_FiltersReset();
 
@@ -144,204 +138,78 @@ int main(void)
             }
             break;
 
-        case MAIN_CHECK_P1:
-            pulses = HARD_GetPulses(CH1_OFFSET);
-            if (pulses)
-                main_state++;
-            else
-                main_state = MAIN_CHECK_P2;
+        case MAIN_CHECK_PULSES:
+            pulses_ch1 = HARD_GetPulses(CH1_OFFSET);
+            pulses_ch2 = HARD_GetPulses(CH2_OFFSET);
+            pulses_ch3 = HARD_GetPulses(CH3_OFFSET);
+            pulses_ch4 = HARD_GetPulses(CH4_OFFSET);
             
+            main_state++;
             break;
             
-        case MAIN_SEND_P1:
-            if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()) &&
-                (COMM_TimeWindow(CH1_OFFSET)))
+        case MAIN_SET_PULSES:
+            if (pulses_ch1 > 999)
+                pulses_ch1 = 999;
+
+            if (pulses_ch2 > 999)
+                pulses_ch2 = 999;
+
+            if (pulses_ch3 > 999)
+                pulses_ch3 = 999;
+
+            if (pulses_ch4 > 999)
+                pulses_ch4 = 999;
+
+            unsigned short pulses_checksum = pulses_ch1 + pulses_ch2 + pulses_ch3 + pulses_ch4;
+            
+            sprintf(send_buff, "%03d %03d %03d %03d %04d",
+                    pulses_ch1,
+                    pulses_ch2,
+                    pulses_ch3,
+                    pulses_ch4,
+                    pulses_checksum);
+
+            if (COMM_Get_SendPacket_State () != READY_TO_SEND)
             {
-                if (pulses > 999)
-                    pulses = 999;
-
-                sprintf(send_buff, "pulses %03d ch1", pulses);
-                if (COMM_SendPacket (send_buff) == resp_working)
-                    main_state++;
-                else
-                {
-                    pck_tx_error++;
-                    main_state = MAIN_CHECK_P2;
-                }
+                // some kind of strange error!
+                main_state = MAIN_CHECK_PULSES;
             }
+            else
+                main_state++;
+            
             break;
 
-        case MAIN_WAIT_ACK_P1:
-            resp_comm = COMM_SendPacket (send_buff);
+        case MAIN_SEND_PULSES_WAIT_ACK:            
+            resp_comm = COMM_SendPacket (send_buff, 1000);    // send packet with timeout
 
             if (resp_comm != resp_working)
             {
                 if (resp_comm == resp_sended_ok)
                 {
-                    unsigned short remain_pulses = HARD_GetPulses(CH1_OFFSET);
-                    HARD_SetPulses(CH1_OFFSET, remain_pulses - pulses);
-                    pulses = 0;
+                    remain_pulses_ch1 = HARD_GetPulses(CH1_OFFSET);
+                    remain_pulses_ch2 = HARD_GetPulses(CH2_OFFSET);
+                    remain_pulses_ch3 = HARD_GetPulses(CH3_OFFSET);
+                    remain_pulses_ch4 = HARD_GetPulses(CH4_OFFSET);
+
+                    HARD_SetPulses(CH1_OFFSET, remain_pulses_ch1 - pulses_ch1);
+                    HARD_SetPulses(CH2_OFFSET, remain_pulses_ch2 - pulses_ch2);
+                    HARD_SetPulses(CH3_OFFSET, remain_pulses_ch3 - pulses_ch3);
+                    HARD_SetPulses(CH4_OFFSET, remain_pulses_ch4 - pulses_ch4);
+
                 }
                 else if ((resp_comm == resp_sended_nok) ||
                          (resp_comm == resp_timeout))
                 {
-                    pck_tx_error++;
+                    // do nothing here
+                    // pck_tx_error++;
                 }
 
-                main_state = MAIN_CHECK_P2;
-            }
-            break;
-            
-        case MAIN_CHECK_P2:
-            pulses = HARD_GetPulses(CH2_OFFSET);
-            if (pulses)
-                main_state++;
-            else
-                main_state = MAIN_CHECK_P3;
-
-            break;
-
-        case MAIN_SEND_P2:
-            if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()) &&
-                (COMM_TimeWindow(CH2_OFFSET)))
-            {
-                if (pulses > 999)
-                    pulses = 999;
-
-                sprintf(send_buff, "pulses %03d ch2", pulses);
-                if (COMM_SendPacket (send_buff) == resp_working)
-                    main_state++;
-                else
-                {
-                    pck_tx_error++;                
-                    main_state = MAIN_CHECK_P3;
-                }
-            }
-            break;
-
-        case MAIN_WAIT_ACK_P2:
-            resp_comm = COMM_SendPacket (send_buff);
-
-            if (resp_comm != resp_working)
-            {
-                if (resp_comm == resp_sended_ok)
-                {
-                    unsigned short remain_pulses = HARD_GetPulses(CH2_OFFSET);
-                    HARD_SetPulses(CH2_OFFSET, remain_pulses - pulses);
-                    pulses = 0;                    
-                }
-                else if ((resp_comm == resp_sended_nok) ||
-                         (resp_comm == resp_timeout))
-                {
-                    pck_tx_error++;
-                }
-
-                main_state = MAIN_CHECK_P3;
-            }
-            break;
-
-        case MAIN_CHECK_P3:
-            pulses = HARD_GetPulses(CH3_OFFSET);
-            if (pulses)
-                main_state++;
-            else
-                main_state = MAIN_CHECK_P4;
-            
-            break;
-
-        case MAIN_SEND_P3:
-            if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()) &&
-                (COMM_TimeWindow(CH3_OFFSET)))
-            {
-                if (pulses > 999)
-                    pulses = 999;
-
-                sprintf(send_buff, "pulses %03d ch3", pulses);
-                if (COMM_SendPacket (send_buff) == resp_working)
-                    main_state++;
-                else
-                {
-                    pck_tx_error++;                
-                    main_state = MAIN_CHECK_P4;
-                }
-            }
-            break;
-
-        case MAIN_WAIT_ACK_P3:
-            resp_comm = COMM_SendPacket (send_buff);
-
-            if (resp_comm != resp_working)
-            {
-                if (resp_comm == resp_sended_ok)
-                {
-                    unsigned short remain_pulses = HARD_GetPulses(CH3_OFFSET);
-                    HARD_SetPulses(CH3_OFFSET, remain_pulses - pulses);
-                    pulses = 0;                    
-                }
-                else if ((resp_comm == resp_sended_nok) ||
-                         (resp_comm == resp_timeout))
-                {
-                    pck_tx_error++;
-                }
-
-                main_state = MAIN_CHECK_P4;
-            }
-            break;
-
-        case MAIN_CHECK_P4:
-            pulses = HARD_GetPulses(CH4_OFFSET);
-            if (pulses)
-                main_state++;
-            else
-                main_state = MAIN_CHECK_P1;
-            
-            break;
-            
-        case MAIN_SEND_P4:
-            if ((COMM_Manager_In_Link()) &&
-                (COMM_ReadyToSend()) &&
-                (COMM_TimeWindow(CH4_OFFSET)))
-            {
-                if (pulses > 999)
-                    pulses = 999;
-
-                sprintf(send_buff, "pulses %03d ch4", pulses);
-                if (COMM_SendPacket (send_buff) == resp_working)
-                    main_state++;
-                else
-                {
-                    pck_tx_error++;                
-                    main_state = MAIN_CHECK_P1;
-                }
-            }
-            break;
-
-        case MAIN_WAIT_ACK_P4:
-            resp_comm = COMM_SendPacket (send_buff);
-
-            if (resp_comm != resp_working)
-            {
-                if (resp_comm == resp_sended_ok)
-                {
-                    unsigned short remain_pulses = HARD_GetPulses(CH4_OFFSET);
-                    HARD_SetPulses(CH4_OFFSET, remain_pulses - pulses);
-                    pulses = 0;                    
-                }
-                else if ((resp_comm == resp_sended_nok) ||
-                         (resp_comm == resp_timeout))
-                {
-                    pck_tx_error++;
-                }
-
-                main_state = MAIN_CHECK_P1;
+                main_state = MAIN_CHECK_PULSES;
             }
             break;
 
         default:
-            main_state = MAIN_CHECK_P1;
+            main_state = MAIN_CHECK_PULSES;
             break;
         }
 
@@ -356,18 +224,7 @@ int main(void)
         }
 
         HARD_UpdatePulsesFilters();
-        COMM_Manager_SM();
-
-        // check for link down or not packet delivered
-        if (pck_tx_error > 5)
-        {
-            pck_tx_error = 0;
-            COMM_Manager_Reset_SM ();
-            COMM_Manager_WaitToStart_SM (6000);
-            COMM_SendOKReset();    // not answer to keepalives during this time            
-            main_state = MAIN_WAIT_TO_START;
-            timer_standby = 6000;
-        }
+        COMM_Manager ();
 
         // pulse indication led its on absolute value
         // LedChannelShowPulses ();
