@@ -35,7 +35,7 @@
 volatile unsigned short send_packet_timeout = 0;
 volatile unsigned short manager_timer = 0;
 
-unsigned short seq = 0;
+unsigned short seq = 1;    // seq goes from 1 to 999
 unsigned short seq_ack = 0;
 unsigned short seq_last_sended = 0;
 
@@ -46,7 +46,7 @@ char comm_buff [100] = { 0 };
 // Module Private Functions ----------------------------------------------------
 unsigned char COMM_SendOKEnable (void);
 comm_resp_e COMM_ProcessPayload (char * payload);
-unsigned short COMM_WritePacket (char * p_buff, char * p_to_send);
+unsigned short COMM_WritePacket (char * p_buff, char * p_to_send, unsigned char change_seq_num);
 
 
 // Module Functions ------------------------------------------------------------
@@ -76,7 +76,7 @@ comm_resp_e COMM_ProcessPayload (char * payload)
 
 
 send_packet_state_e send_packet_state = READY_TO_SEND;
-comm_resp_e COMM_SendPacket (char * p_to_send, unsigned short timeout)
+comm_resp_e COMM_SendPacket (char * p_to_send, unsigned short timeout, unsigned char change_seq_num)
 {
     comm_resp_e resp = resp_working;
     unsigned short new_seq = 0;
@@ -84,8 +84,8 @@ comm_resp_e COMM_SendPacket (char * p_to_send, unsigned short timeout)
     switch (send_packet_state)
     {
     case READY_TO_SEND:
-        new_seq = COMM_WritePacket(comm_buff, p_to_send);
-        if (new_seq)
+        new_seq = COMM_WritePacket(comm_buff, p_to_send, change_seq_num);
+        if (new_seq)    // any seq from 1 to 999
         {
             Usart1Send(comm_buff);
             send_packet_timeout = timeout;
@@ -137,17 +137,20 @@ send_packet_state_e COMM_Get_SendPacket_State (void)
 }
 
 
-unsigned short COMM_WritePacket (char * p_buff, char * p_to_send)
+unsigned short COMM_WritePacket (char * p_buff, char * p_to_send, unsigned char change_seq_num)
 {
     unsigned char len = strlen(p_to_send);
 
     if ((len == 0) || (len > 90))
         return 0;
-    
-    if (seq < 999)    //numbers from 1 to 999
-        seq++;
-    else
-        seq = 1;
+
+    if (change_seq_num)
+    {
+        if (seq < 999)    //numbers from 1 to 999
+            seq++;
+        else
+            seq = 1;
+    }
 
     if (*(p_to_send + len - 1) == '\n')
         sprintf(p_buff, "s%03d %s", seq, p_to_send);

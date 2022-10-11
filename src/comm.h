@@ -40,7 +40,7 @@ typedef enum {
 
 
 // Module Exported Functions ---------------------------------------------------
-comm_resp_e COMM_SendPacket (char * p_to_send, unsigned short timeout);
+comm_resp_e COMM_SendPacket (char * p_to_send, unsigned short timeout, unsigned char change_seq_num);
 send_packet_state_e COMM_Get_SendPacket_State (void);
 
 void COMM_Manager (void);

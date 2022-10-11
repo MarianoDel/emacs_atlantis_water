@@ -126,6 +126,7 @@ int main(void)
     comm_resp_e resp_comm = resp_working;
 
     ADC_FiltersReset();
+    unsigned char last_acknowledge = 1;    // always change the seq in first pckt!
 
     while (1)
     {
@@ -180,7 +181,7 @@ int main(void)
             break;
 
         case MAIN_SEND_PULSES_WAIT_ACK:            
-            resp_comm = COMM_SendPacket (send_buff, 1000);    // send packet with timeout
+            resp_comm = COMM_SendPacket (send_buff, 1000, last_acknowledge);    // send packet with timeout
 
             if (resp_comm != resp_working)
             {
@@ -198,6 +199,7 @@ int main(void)
 
                     timer_standby = 900;
                     main_state = MAIN_WAIT_TO_START;
+                    last_acknowledge = 1;
                 }
                 else if ((resp_comm == resp_sended_nok) ||
                          (resp_comm == resp_timeout))
@@ -205,9 +207,8 @@ int main(void)
                     // do nothing here
                     // pck_tx_error++;
                     main_state = MAIN_CHECK_PULSES;
+                    last_acknowledge = 0;
                 }
-
-
             }
             break;
 

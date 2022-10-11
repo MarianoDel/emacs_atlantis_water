@@ -191,9 +191,13 @@ class MeterProcess:
             return 0
 
         if pkt.sequence == self.last_sequence:
+            self.meas_channel[1] = 0
+            self.meas_channel[2] = 0
+            self.meas_channel[3] = 0
+            self.meas_channel[4] = 0
             print("rx len: " + str(len(data)) + " data: " + str(data))            
-            print("same seq packet, no process")
-            return 0
+            print("same seq packet, no counting")
+            return 1
 
         if pkt.pulses_check != pkt.pulses_ch1 + pkt.pulses_ch2 + pkt.pulses_ch3 + pkt.pulses_ch4:
             print(str(pkt.pulses_ch1))
