@@ -41,6 +41,7 @@ class MeterProcess:
         self.last_getted = -1
         self.meas_channel = [0, 0, 0, 0, 0]    # five index vector from 1 to 4
 
+        self.LinkUp = False
         self.link_up_rx_timeout = 0
         self.link_led_alive_timer = 0
         self.tt = 0
@@ -102,9 +103,9 @@ class MeterProcess:
         # init the leds state
         self.link_up_led = False
         LedLinkOff()
-        # self.link_up_led = True
-        # LedLinkOn()
-        # self.link_up_rx_timeout = 100
+
+        # init driver on Rx
+        self.SW_TxOff()
 
         # init the loop process
         print("MeterProcess initialized")
@@ -119,8 +120,8 @@ class MeterProcess:
             self.transmission('s' + seq_str + ' ok\n')
 
         if self.link_up_rx_timeout == 0:
-            if self.link_up_led:
-                self.link_up_led = False
+            if self.Link:
+                self.LinkUp = False
                 self.LedLinkOff()
 
         if self.meas_channel != [0, 0, 0, 0, 0]:
@@ -128,9 +129,11 @@ class MeterProcess:
             for i in range(len(self.meas_channel)):
                 self.meas_channel[i] = 0
 
-        if self.link_led_alive_timer == 0:
-            self.link_led_alive_timer = 30
-            self.LedLinkPulse()
+        # show that we are alive if no link present (blink on 3 secs.)
+        if self.LinkUp == False:
+            if self.link_led_alive_timer == 0:
+                self.link_led_alive_timer = 30
+                self.LedLinkPulse()
             
         time.sleep(0.001)
 
@@ -170,7 +173,7 @@ class MeterProcess:
                     self.answer_ok = True
                     self.answer_ok_seq = self.last_sequence
                     self.link_up_rx_timeout = 20
-                    self.link_up_led = True
+                    self.LinkUp = True
                     self.LedLinkOn()
 
 
