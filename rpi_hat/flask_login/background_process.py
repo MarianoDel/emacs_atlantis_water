@@ -101,7 +101,6 @@ class MeterProcess:
         self.tt.start()
 
         # init the leds state
-        self.link_up_led = False
         LedLinkOff()
 
         # init driver on Rx
@@ -120,7 +119,7 @@ class MeterProcess:
             self.transmission('s' + seq_str + ' ok\n')
 
         if self.link_up_rx_timeout == 0:
-            if self.Link:
+            if self.LinkUp:
                 self.LinkUp = False
                 self.LedLinkOff()
 
