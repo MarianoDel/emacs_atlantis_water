@@ -165,7 +165,7 @@ class MeterProcess:
                 data_rx += to_clean_data[i]
 
         if len(data_rx) >= 25:
-            print("rx len: " + str(len(data_rx)) + " data: " + str(data_rx))
+            # print("rx len: " + str(len(data_rx)) + " data: " + str(data_rx))
             if data_rx.startswith('s'):
                 ans = self.process_packet(data_rx)
                 if ans == 1:
@@ -186,10 +186,12 @@ class MeterProcess:
         pkt = Packet_Info()
 
         if self.check_packet_info_from_string(data, pkt) == 0:
+            print("rx len: " + str(len(data)) + " data: " + str(data))
             print("bad sequence packet, no process")
             return 0
 
         if pkt.sequence == self.last_sequence:
+            print("rx len: " + str(len(data)) + " data: " + str(data))            
             print("same seq packet, no process")
             return 0
 
@@ -197,8 +199,9 @@ class MeterProcess:
             print(str(pkt.pulses_ch1))
             print(str(pkt.pulses_ch2))
             print(str(pkt.pulses_ch3))
-            print(str(pkt.pulses_ch4))            
+            print(str(pkt.pulses_ch4))
             print(str(pkt.pulses_check))
+            print("rx len: " + str(len(data)) + " data: " + str(data))
             print("bad checksum, no process")
             return 0
         

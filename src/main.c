@@ -196,15 +196,18 @@ int main(void)
                     HARD_SetPulses(CH3_OFFSET, remain_pulses_ch3 - pulses_ch3);
                     HARD_SetPulses(CH4_OFFSET, remain_pulses_ch4 - pulses_ch4);
 
+                    timer_standby = 900;
+                    main_state = MAIN_WAIT_TO_START;
                 }
                 else if ((resp_comm == resp_sended_nok) ||
                          (resp_comm == resp_timeout))
                 {
                     // do nothing here
                     // pck_tx_error++;
+                    main_state = MAIN_CHECK_PULSES;
                 }
 
-                main_state = MAIN_CHECK_PULSES;
+
             }
             break;
 
