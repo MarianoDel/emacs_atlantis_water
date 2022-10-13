@@ -2,6 +2,10 @@
 # use with python3
 import configparser
 
+import os
+import sys
+
+
 def ReadConfigFile (start_empty=False):
     global pulses_total_list
     global pulses_hour_list_m1
@@ -207,6 +211,8 @@ def hourUpdate (pulses_last_hour_list):
     global week_day_cntr
     global month_day_cntr
 
+    write_config_and_reload = False
+
     pulses_total_list[0] += pulses_last_hour_list[0]
     pulses_total_list[1] += pulses_last_hour_list[1]
     pulses_total_list[2] += pulses_last_hour_list[2]
@@ -221,6 +227,7 @@ def hourUpdate (pulses_last_hour_list):
         hour_cntr += 1
     else:
         hour_cntr = 0
+        write_config_and_reload = True
 
         pulses_week_list_m1[week_day_cntr] = sum(pulses_hour_list_m1)
         pulses_week_list_m2[week_day_cntr] = sum(pulses_hour_list_m2)
@@ -244,6 +251,14 @@ def hourUpdate (pulses_last_hour_list):
 
     # write backup after the update
     WriteConfigFile()
+    # reload if one day pass
+    if write_config_and_reload == True:
+        os.system('date >> reload.txt')
+        os.system('echo "one day reload" >> reload.txt')
+        os.system('sudo reboot')
+        # sys.exit(1)
+
+        
 
 
 def getMeterTotals():
