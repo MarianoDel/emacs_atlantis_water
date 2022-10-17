@@ -21,6 +21,11 @@ def ReadConfigFile (start_empty=False):
     global pulses_month_list_m3
     global pulses_month_list_m4
 
+    global hour_cntr
+    global week_day_cntr
+    global month_day_cntr
+
+
     if start_empty:
         pulses_total_list = [0 for x in range(4)]
         pulses_hour_list_m1 = [0 for x in range(24)]
@@ -35,6 +40,10 @@ def ReadConfigFile (start_empty=False):
         pulses_month_list_m2 = [0 for x in range(30)]
         pulses_month_list_m3 = [0 for x in range(30)]
         pulses_month_list_m4 = [0 for x in range(30)]
+
+        hour_cntr = 0
+        week_day_cntr = 0
+        month_day_cntr = 0
         return
         
 
@@ -95,6 +104,14 @@ def ReadConfigFile (start_empty=False):
     pulses_read = config.get('pulses', 'pulses_month_m4')
     pulses_month_list_m4 = [int(x) for x in list(pulses_read.split(','))]
     print(pulses_month_list_m4)
+
+    # get the saved counters
+    # str_read = config.get('counters', 'hour_cntr', fallback='0')
+    # hour_cntr = int(str_read)
+    str_read = config.get('counters', 'week_day_cntr', fallback='0')
+    week_day_cntr = int(str_read)    
+    str_read = config.get('counters', 'month_day_cntr', fallback='0')
+    month_day_cntr = int(str_read)    
     
         
         
@@ -169,7 +186,13 @@ def WriteConfigFile ():
     to_save_str_bound = to_save_list.replace('[', '')
     to_save_str_no_bounds = to_save_str_bound.replace(']', '')       
     config.set('pulses', 'pulses_month_m4', to_save_str_no_bounds)
-    
+
+    # save current date counters
+    config.add_section('counters')
+    config.set('counters', 'hour_cntr', hour_cntr)
+    config.set('counters', 'week_day_cntr', week_day_cntr)
+    config.set('counters', 'month_day_cntr', month_day_cntr)    
+
     
     # Writing our configuration file
     with open('flash_data.txt', 'w') as configfile:
