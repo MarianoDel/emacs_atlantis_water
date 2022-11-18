@@ -92,7 +92,7 @@ unsigned char SPI_Send_Receive (unsigned char a)
     	asm("nop");
     }
 
-    return (SPI1->DR & 0x0F);
+    return (SPI1->DR);
 }
 
 
